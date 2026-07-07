@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: crossborder-trend-report
+  datasource:
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/crossborder_trend_demo?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${MYSQL_USER:cross_demo}
+    password: ${MYSQL_PASSWORD:cross_demo_123456}
+  sql:
+    init:
+      mode: always
+server:
+  port: ${SERVER_PORT:8090}
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5174,http://127.0.0.1:5174}
+  report:
+    cron: ${REPORT_CRON:0 30 8 * * *}
+    zone: ${REPORT_ZONE:Asia/Shanghai}
+    exchange-rate-jpy-cny: ${JPY_CNY_RATE:0.048}
+    default-shipping-cny: ${DEFAULT_SHIPPING_CNY:18}
+    source-mode: ${SOURCE_MODE:demo}
+    max-products: ${MAX_PRODUCTS:20}
+  sources:
+    tiktok-mode: ${TIKTOK_MODE:demo}
+    apify-token: ${APIFY_TOKEN:}
+    apify-tik-tok-actor: ${APIFY_TIKTOK_ACTOR:clockworks/tiktok-scraper}
+    tiktok-research-token: ${TIKTOK_RESEARCH_TOKEN:}
+    tiktok-shop-api-key: ${TIKTOK_SHOP_API_KEY:}
+    amazon-mode: ${AMAZON_MODE:rainforest}
+    rainforest-api-key: ${RAINFOREST_API_KEY:}
+    keepa-api-key: ${KEEPA_API_KEY:}
+    serpapi-key: ${SERPAPI_KEY:}
+    supplier-mode: ${SUPPLIER_MODE:search-link}
