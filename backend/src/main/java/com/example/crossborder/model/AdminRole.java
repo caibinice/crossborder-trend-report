@@ -1,2 +1,3 @@
 package com.example.crossborder.model;
-public record AdminRole(long id,String roleKey,String roleName,String status,String remark) {}
+import java.util.List;
+public record AdminRole(long id,String tenantId,String roleKey,String roleName,String status,List<String> menuKeys,String remark) {}
