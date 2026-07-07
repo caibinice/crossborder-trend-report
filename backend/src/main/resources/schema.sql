@@ -47,6 +47,47 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   smart_mode BOOLEAN NOT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-INSERT INTO admin_settings(id, foreign_sources, domestic_sources, categories, regions, frequency_cron, max_products, jpy_cny_rate, default_shipping_cny, smart_mode)
-SELECT 1, 'TikTok/Apify,Amazon/Rainforest,Amazon/Keepa', '1688,Taobao,Pinduoduo', '玩具,家居,美妆,宠物,数码,户外,母婴,汽车,厨房,文具,服饰,健康', '日本', '0 30 8 * * *', 30, 0.048000, 18.00, TRUE
-WHERE NOT EXISTS (SELECT 1 FROM admin_settings WHERE id = 1);
+CREATE TABLE IF NOT EXISTS admin_roles (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  role_key VARCHAR(64) NOT NULL UNIQUE,
+  role_name VARCHAR(64) NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  remark VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS admin_users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(64) NOT NULL UNIQUE,
+  nickname VARCHAR(64) NOT NULL,
+  role_key VARCHAR(64) NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  email VARCHAR(128),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS admin_menus (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  parent_id BIGINT NOT NULL DEFAULT 0,
+  menu_key VARCHAR(64) NOT NULL UNIQUE,
+  title VARCHAR(64) NOT NULL,
+  icon VARCHAR(64),
+  path VARCHAR(128),
+  component VARCHAR(128),
+  sort_order INT NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'enabled'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS market_configs (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  market_key VARCHAR(64) NOT NULL UNIQUE,
+  market_name VARCHAR(64) NOT NULL,
+  region VARCHAR(64) NOT NULL,
+  enabled BOOLEAN NOT NULL,
+  note VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS category_configs (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  category_name VARCHAR(64) NOT NULL UNIQUE,
+  market_key VARCHAR(64) NOT NULL,
+  enabled BOOLEAN NOT NULL,
+  keywords VARCHAR(255),
+  note VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
