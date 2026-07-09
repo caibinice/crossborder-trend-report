@@ -43,7 +43,7 @@ public class AdminSettingsRepository {
         if (count == null || count == 0) {
             jdbc.update("""
               INSERT INTO admin_settings(id, tenant_id, foreign_sources, domestic_sources, categories, regions, frequency_cron, max_products, jpy_cny_rate, default_shipping_cny, smart_mode)
-              VALUES(?, ?, 'TikTok/Apify,Amazon/Rainforest,Amazon/Keepa', '1688,Taobao,Pinduoduo', '鐜╁叿,瀹跺眳,缇庡,瀹犵墿,鏁扮爜,鎴峰,姣嶅┐,姹借溅,鍘ㄦ埧,鏂囧叿,鏈嶉グ,鍋ュ悍', '鏃ユ湰', '0 30 8 * * *', 30, 0.048, 18, true)
+              VALUES(?, ?, 'TikTok/Apify,Amazon/Rainforest,Amazon/Keepa', '1688,Taobao,Pinduoduo', '玩具,家居,美妆,宠物,数码,户外,母婴,汽车,厨房,文具,服饰,健康', '日本', '0 30 8 * * *', 30, 0.048, 18, true)
             """, "default".equals(tenantId) ? 1 : Math.abs(tenantId.hashCode()) + 1000L, tenantId);
         }
     }
