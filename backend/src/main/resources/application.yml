@@ -2,11 +2,12 @@ spring:
   application:
     name: crossborder-trend-report
   datasource:
-    url: ${MYSQL_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:crossborder_trend_demo}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
-    username: ${MYSQL_USER:root}
+    url: ${MYSQL_URL:jdbc:mysql://${MYSQL_HOST:101.132.78.217}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:crossborder_trend_demo}?useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${MYSQL_USER:cross_demo}
     password: ${MYSQL_PASSWORD:}
   sql:
     init:
+      encoding: UTF-8
       mode: always
 server:
   port: ${SERVER_PORT:8090}

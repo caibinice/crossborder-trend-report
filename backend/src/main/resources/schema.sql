@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 CREATE TABLE IF NOT EXISTS trend_reports (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
@@ -7,7 +9,7 @@ CREATE TABLE IF NOT EXISTS trend_reports (
   summary TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uk_report_date_mode (tenant_id, report_date, source_mode)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS trend_products (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -32,7 +34,7 @@ CREATE TABLE IF NOT EXISTS trend_products (
   CONSTRAINT fk_trend_products_report FOREIGN KEY (report_id) REFERENCES trend_reports(id) ON DELETE CASCADE,
   INDEX idx_trend_products_tenant_category (tenant_id, category),
   INDEX idx_trend_products_heat (heat_score)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS domestic_links (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -46,7 +48,7 @@ CREATE TABLE IF NOT EXISTS domestic_links (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_domestic_links_product FOREIGN KEY (product_id) REFERENCES trend_products(id) ON DELETE CASCADE,
   INDEX idx_domestic_links_tenant_product (tenant_id, product_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS admin_settings (
   id BIGINT PRIMARY KEY,
@@ -62,7 +64,7 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   smart_mode BOOLEAN NOT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uk_admin_settings_tenant (tenant_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sys_tenant (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -74,7 +76,7 @@ CREATE TABLE IF NOT EXISTS sys_tenant (
   status VARCHAR(16) NOT NULL DEFAULT 'enabled',
   remark VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sys_role (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -86,7 +88,7 @@ CREATE TABLE IF NOT EXISTS sys_role (
   remark VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uk_role_tenant_key (tenant_id, role_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sys_user (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -99,7 +101,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
   email VARCHAR(128),
   phone VARCHAR(64),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sys_menu (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -112,7 +114,7 @@ CREATE TABLE IF NOT EXISTS sys_menu (
   permission VARCHAR(128),
   sort_order INT NOT NULL DEFAULT 0,
   status VARCHAR(16) NOT NULL DEFAULT 'enabled'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sys_dict_type (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -122,7 +124,7 @@ CREATE TABLE IF NOT EXISTS sys_dict_type (
   status VARCHAR(16) NOT NULL DEFAULT 'enabled',
   remark VARCHAR(255),
   UNIQUE KEY uk_dict_type_tenant (tenant_id, dict_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sys_dict_data (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -133,7 +135,7 @@ CREATE TABLE IF NOT EXISTS sys_dict_data (
   sort_order INT NOT NULL DEFAULT 0,
   status VARCHAR(16) NOT NULL DEFAULT 'enabled',
   remark VARCHAR(255)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sys_config (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -144,7 +146,7 @@ CREATE TABLE IF NOT EXISTS sys_config (
   system_builtin BOOLEAN NOT NULL DEFAULT FALSE,
   remark VARCHAR(255),
   UNIQUE KEY uk_config_tenant_key (tenant_id, config_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sys_oper_log (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -156,7 +158,7 @@ CREATE TABLE IF NOT EXISTS sys_oper_log (
   status VARCHAR(16),
   message VARCHAR(1024),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sys_login_log (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -166,7 +168,7 @@ CREATE TABLE IF NOT EXISTS sys_login_log (
   status VARCHAR(16),
   message VARCHAR(512),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS market_configs (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -177,7 +179,7 @@ CREATE TABLE IF NOT EXISTS market_configs (
   enabled BOOLEAN NOT NULL,
   note VARCHAR(255),
   UNIQUE KEY uk_market_tenant_key (tenant_id, market_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS category_configs (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -188,7 +190,7 @@ CREATE TABLE IF NOT EXISTS category_configs (
   keywords VARCHAR(255),
   note VARCHAR(255),
   UNIQUE KEY uk_category_tenant_name (tenant_id, category_name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO admin_settings (
   id, tenant_id, foreign_sources, domestic_sources, categories, regions,
@@ -358,13 +360,30 @@ ON DUPLICATE KEY UPDATE
 
 INSERT INTO trend_reports (
   id, tenant_id, report_date, source_mode, title, summary
-) VALUES (
+) VALUES
+(
   1,
   'default',
   '2026-07-08',
   'TikTok/Apify + Amazon/Rainforest + Amazon/Keepa',
   '日本跨境热品日报 2026-07-08',
-  '初始化演示报表：用于首屏展示、后台日报记录、商品池和利润测算联调。'
+  '工作日热度最高的一组样例，覆盖玩具、家居、数码、美妆与厨房品类。'
+),
+(
+  2,
+  'default',
+  '2026-07-07',
+  'TikTok/Apify + Amazon/Rainforest + Amazon/Keepa',
+  '日本跨境热品日报 2026-07-07',
+  '偏向宠物、户外和办公文具类，适合测试趋势切换和历史日报列表。'
+),
+(
+  3,
+  'default',
+  '2026-07-06',
+  'TikTok/Apify + Amazon/Rainforest + Amazon/Keepa',
+  '日本跨境热品日报 2026-07-06',
+  '覆盖服饰、母婴、健康类产品，用于验证多日报与多品类场景。'
 )
 ON DUPLICATE KEY UPDATE
   tenant_id = VALUES(tenant_id),
@@ -398,6 +417,62 @@ INSERT INTO trend_products (
     'TikTok JP / demo', 'https://www.tiktok.com/search?q=%E6%89%8B%E6%9C%BA%20%E6%95%A3%E7%83%AD%20%E8%83%8C%E5%A4%B9',
     84, 3280.00, 157.44, 66.00, 18.00, 73.44, 0.4664,
     '夏季直播/手游场景稳定，适合搭配视频创作者周边内容。'
+  ),
+  (
+    4, 'default', 1, 4, '美妆',
+    'LEDコンパクトメイクミラー', '便携补光化妆镜', '补光 化妆镜 便携',
+    'TikTok JP / demo', 'https://www.tiktok.com/search?q=%E8%A1%A5%E5%85%89%20%E5%8C%96%E5%A6%86%E9%95%9C%20%E4%BE%BF%E6%90%BA',
+    81, 2680.00, 128.64, 42.50, 16.00, 70.14, 0.5452,
+    '适合与出差、通勤、随身美妆场景结合，视频展示空间大。'
+  ),
+  (
+    5, 'default', 1, 5, '厨房',
+    '真空保存ボックス', '真空密封保鲜盒', '真空 保鲜盒 密封',
+    'TikTok JP / demo', 'https://www.tiktok.com/search?q=%E7%9C%9F%E7%A9%BA%20%E4%BF%9D%E9%B2%9C%E7%9B%92%20%E5%AF%86%E5%B0%81',
+    78, 2180.00, 104.64, 33.60, 17.00, 54.04, 0.5164,
+    '适合厨房收纳和冰箱整理内容，容易与保鲜痛点形成转化。'
+  ),
+  (
+    6, 'default', 2, 1, '宠物',
+    '自動給餌給水セット', '自动喂食饮水器', '宠物 自动 喂食 饮水器',
+    'TikTok JP / demo', 'https://www.tiktok.com/search?q=%E5%AE%A0%E7%89%A9%20%E8%87%AA%E5%8A%A8%20%E5%96%82%E9%A3%9F',
+    92, 4580.00, 219.84, 96.00, 24.00, 99.84, 0.4541,
+    '猫狗双场景都容易出内容，适合做功能演示和居家养宠题材。'
+  ),
+  (
+    7, 'default', 2, 2, '户外',
+    '軽量折りたたみキャンプワゴン', '轻量折叠露营推车', '露营 推车 折叠 轻量',
+    'TikTok JP / demo', 'https://www.tiktok.com/search?q=%E9%9C%B2%E8%90%A5%20%E6%8E%A8%E8%BD%A6%20%E6%8A%98%E5%8F%A0',
+    87, 6980.00, 335.04, 168.00, 38.00, 129.04, 0.3851,
+    '日本露营场景成熟，适合长视频对比和强收纳卖点表达。'
+  ),
+  (
+    8, 'default', 2, 3, '文具',
+    'タブレット磁気スタンド', '平板磁吸阅读支架', '平板 支架 磁吸 阅读',
+    'TikTok JP / demo', 'https://www.tiktok.com/search?q=%E5%B9%B3%E6%9D%BF%20%E6%94%AF%E6%9E%B6%20%E7%A3%81%E5%90%B8',
+    76, 2880.00, 138.24, 52.00, 18.00, 68.24, 0.4936,
+    '办公和追剧两类场景通吃，适合与桌搭内容搭配推广。'
+  ),
+  (
+    9, 'default', 3, 1, '服饰',
+    'UVアームカバー', '防晒冰袖', '防晒 冰袖 夏季',
+    'TikTok JP / demo', 'https://www.tiktok.com/search?q=%E9%98%B2%E6%99%92%20%E5%86%B0%E8%A2%96%20%E5%A4%8F%E5%AD%A3',
+    88, 1580.00, 75.84, 16.80, 10.00, 49.04, 0.6466,
+    '夏季通勤与骑行场景明显，低客单适合快速验证转化素材。'
+  ),
+  (
+    10, 'default', 3, 2, '母婴',
+    'ベビーフード小分けケース', '婴儿辅食分装盒', '母婴 辅食 分装盒',
+    'TikTok JP / demo', 'https://www.tiktok.com/search?q=%E8%BE%85%E9%A3%9F%20%E5%88%86%E8%A3%85%E7%9B%92%20%E6%AF%8D%E5%A9%B4',
+    82, 2380.00, 114.24, 28.50, 15.00, 70.74, 0.6192,
+    '辅食准备流程容易形成种草内容，适合母婴博主短视频推荐。'
+  ),
+  (
+    11, 'default', 3, 3, '健康',
+    '姿勢サポートクッション', '坐姿矫正靠背', '坐姿 矫正 靠背 办公',
+    'TikTok JP / demo', 'https://www.tiktok.com/search?q=%E5%9D%90%E5%A7%BF%20%E7%9F%AB%E6%AD%A3%20%E9%9D%A0%E8%83%8C',
+    79, 3680.00, 176.64, 72.00, 22.00, 82.64, 0.4678,
+    '久坐办公人群需求稳定，适合通过前后对比图和使用反馈转化。'
   )
 ON DUPLICATE KEY UPDATE
   tenant_id = VALUES(tenant_id),
@@ -450,6 +525,86 @@ INSERT INTO domestic_links (
     6, 'default', 3, 'Taobao', '手机散热背夹 - 淘宝搜索',
     'https://s.taobao.com/search?q=%E6%89%8B%E6%9C%BA%20%E6%95%A3%E7%83%AD%20%E8%83%8C%E5%A4%B9',
     79.00, '适合看零售端卖点和主图'
+  ),
+  (
+    7, 'default', 4, '1688', '便携补光化妆镜 - 1688 搜索',
+    'https://s.1688.com/selloffer/offer_search.htm?keywords=%E8%A1%A5%E5%85%89%20%E5%8C%96%E5%A6%86%E9%95%9C%20%E4%BE%BF%E6%90%BA',
+    42.50, '适合看补光镜源头款和起订量'
+  ),
+  (
+    8, 'default', 4, 'Taobao', '便携补光化妆镜 - 淘宝搜索',
+    'https://s.taobao.com/search?q=%E8%A1%A5%E5%85%89%20%E5%8C%96%E5%A6%86%E9%95%9C%20%E4%BE%BF%E6%90%BA',
+    58.00, '适合核对包装图和功能点展示'
+  ),
+  (
+    9, 'default', 5, '1688', '真空密封保鲜盒 - 1688 搜索',
+    'https://s.1688.com/selloffer/offer_search.htm?keywords=%E7%9C%9F%E7%A9%BA%20%E4%BF%9D%E9%B2%9C%E7%9B%92%20%E5%AF%86%E5%B0%81',
+    33.60, '适合看家庭收纳类大货供应'
+  ),
+  (
+    10, 'default', 5, 'Pinduoduo', '真空密封保鲜盒 - 拼多多搜索',
+    'https://mobile.yangkeduo.com/search_result.html?search_key=%E7%9C%9F%E7%A9%BA%20%E4%BF%9D%E9%B2%9C%E7%9B%92%20%E5%AF%86%E5%B0%81',
+    39.90, '适合观察低价带商品组合形式'
+  ),
+  (
+    11, 'default', 6, '1688', '自动喂食饮水器 - 1688 搜索',
+    'https://s.1688.com/selloffer/offer_search.htm?keywords=%E5%AE%A0%E7%89%A9%20%E8%87%AA%E5%8A%A8%20%E5%96%82%E9%A3%9F',
+    96.00, '适合看宠物器具结构和供货规格'
+  ),
+  (
+    12, 'default', 6, 'Taobao', '自动喂食饮水器 - 淘宝搜索',
+    'https://s.taobao.com/search?q=%E5%AE%A0%E7%89%A9%20%E8%87%AA%E5%8A%A8%20%E5%96%82%E9%A3%9F',
+    128.00, '适合核对宠物用户评论和使用痛点'
+  ),
+  (
+    13, 'default', 7, '1688', '轻量折叠露营推车 - 1688 搜索',
+    'https://s.1688.com/selloffer/offer_search.htm?keywords=%E9%9C%B2%E8%90%A5%20%E6%8E%A8%E8%BD%A6%20%E6%8A%98%E5%8F%A0',
+    168.00, '适合对比不同承重和轮组方案'
+  ),
+  (
+    14, 'default', 7, 'Taobao', '轻量折叠露营推车 - 淘宝搜索',
+    'https://s.taobao.com/search?q=%E9%9C%B2%E8%90%A5%20%E6%8E%A8%E8%BD%A6%20%E6%8A%98%E5%8F%A0',
+    228.00, '适合看零售端卖点包装和主图风格'
+  ),
+  (
+    15, 'default', 8, '1688', '平板磁吸阅读支架 - 1688 搜索',
+    'https://s.1688.com/selloffer/offer_search.htm?keywords=%E5%B9%B3%E6%9D%BF%20%E6%94%AF%E6%9E%B6%20%E7%A3%81%E5%90%B8',
+    52.00, '适合看办公桌搭类配件供货'
+  ),
+  (
+    16, 'default', 8, 'Pinduoduo', '平板磁吸阅读支架 - 拼多多搜索',
+    'https://mobile.yangkeduo.com/search_result.html?search_key=%E5%B9%B3%E6%9D%BF%20%E6%94%AF%E6%9E%B6%20%E7%A3%81%E5%90%B8',
+    64.00, '适合看低价带支架与磁吸卖点组合'
+  ),
+  (
+    17, 'default', 9, '1688', '防晒冰袖 - 1688 搜索',
+    'https://s.1688.com/selloffer/offer_search.htm?keywords=%E9%98%B2%E6%99%92%20%E5%86%B0%E8%A2%96%20%E5%A4%8F%E5%AD%A3',
+    16.80, '适合快速对比夏季爆款起订量'
+  ),
+  (
+    18, 'default', 9, 'Taobao', '防晒冰袖 - 淘宝搜索',
+    'https://s.taobao.com/search?q=%E9%98%B2%E6%99%92%20%E5%86%B0%E8%A2%96%20%E5%A4%8F%E5%AD%A3',
+    26.90, '适合核对图案和尺码变化'
+  ),
+  (
+    19, 'default', 10, '1688', '婴儿辅食分装盒 - 1688 搜索',
+    'https://s.1688.com/selloffer/offer_search.htm?keywords=%E8%BE%85%E9%A3%9F%20%E5%88%86%E8%A3%85%E7%9B%92%20%E6%AF%8D%E5%A9%B4',
+    28.50, '适合看食品接触级材质说明'
+  ),
+  (
+    20, 'default', 10, 'Taobao', '婴儿辅食分装盒 - 淘宝搜索',
+    'https://s.taobao.com/search?q=%E8%BE%85%E9%A3%9F%20%E5%88%86%E8%A3%85%E7%9B%92%20%E6%AF%8D%E5%A9%B4',
+    39.90, '适合核对母婴场景图和收纳卖点'
+  ),
+  (
+    21, 'default', 11, '1688', '坐姿矫正靠背 - 1688 搜索',
+    'https://s.1688.com/selloffer/offer_search.htm?keywords=%E5%9D%90%E5%A7%BF%20%E7%9F%AB%E6%AD%A3%20%E9%9D%A0%E8%83%8C',
+    72.00, '适合看人体工学类工厂款式'
+  ),
+  (
+    22, 'default', 11, 'Pinduoduo', '坐姿矫正靠背 - 拼多多搜索',
+    'https://mobile.yangkeduo.com/search_result.html?search_key=%E5%9D%90%E5%A7%BF%20%E7%9F%AB%E6%AD%A3%20%E9%9D%A0%E8%83%8C',
+    89.00, '适合看低价带办公健康类竞品'
   )
 ON DUPLICATE KEY UPDATE
   tenant_id = VALUES(tenant_id),

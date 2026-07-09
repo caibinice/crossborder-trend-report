@@ -13,6 +13,7 @@ $backendLog = Join-Path $logsDir 'backend.log'
 $backendErrLog = Join-Path $logsDir 'backend.err.log'
 $frontendLog = Join-Path $logsDir 'frontend.log'
 $frontendErrLog = Join-Path $logsDir 'frontend.err.log'
+$credentialsFile = Join-Path $repoRoot 'credentials.txt'
 
 New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 
@@ -39,6 +40,47 @@ function Import-DotEnv {
     }
     [Environment]::SetEnvironmentVariable($name, $value, 'Process')
   }
+}
+
+function Import-IniFile {
+  param([Parameter(Mandatory = $true)][string]$Path)
+
+  $result = @{}
+  $section = ''
+  Get-Content $Path | ForEach-Object {
+    $line = $_.Trim()
+    if (-not $line -or $line.StartsWith('#') -or $line.StartsWith(';')) {
+      return
+    }
+
+    if ($line -match '^\[(.+)\]$') {
+      $section = $matches[1].Trim().ToLowerInvariant()
+      if (-not $result.ContainsKey($section)) {
+        $result[$section] = @{}
+      }
+      return
+    }
+
+    $parts = $line.Split('=', 2)
+    if ($parts.Count -ne 2) {
+      return
+    }
+
+    if (-not $result.ContainsKey($section)) {
+      $result[$section] = @{}
+    }
+
+    $key = $parts[0].Trim().ToLowerInvariant()
+    $value = $parts[1].Trim()
+    if ($value.Length -ge 2) {
+      if (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'"))) {
+        $value = $value.Substring(1, $value.Length - 2)
+      }
+    }
+    $result[$section][$key] = $value
+  }
+
+  return $result
 }
 
 function Set-DefaultEnv {
@@ -86,6 +128,11 @@ function Wait-PortReady {
   return $false
 }
 
+$credentialMap = @{}
+if (Test-Path $credentialsFile) {
+  $credentialMap = Import-IniFile -Path $credentialsFile
+}
+
 $resolvedEnvFile = if ($EnvFile) {
   (Resolve-Path $EnvFile).Path
 } else {
@@ -96,15 +143,41 @@ if (Test-Path $resolvedEnvFile) {
   Import-DotEnv -Path $resolvedEnvFile
 }
 
+Set-DefaultEnv -Name 'DB_TARGET' -Value 'remote'
 Set-DefaultEnv -Name 'SERVER_PORT' -Value '8090'
 Set-DefaultEnv -Name 'FRONTEND_HOST' -Value '127.0.0.1'
 Set-DefaultEnv -Name 'FRONTEND_PORT' -Value '5174'
-Set-DefaultEnv -Name 'MYSQL_HOST' -Value '127.0.0.1'
-Set-DefaultEnv -Name 'MYSQL_PORT' -Value '3306'
-Set-DefaultEnv -Name 'MYSQL_DATABASE' -Value 'crossborder_trend_demo'
-Set-DefaultEnv -Name 'MYSQL_USER' -Value 'root'
-Set-DefaultEnv -Name 'MYSQL_PASSWORD' -Value ''
 Set-DefaultEnv -Name 'CORS_ALLOWED_ORIGINS' -Value "http://localhost:$($env:FRONTEND_PORT),http://127.0.0.1:$($env:FRONTEND_PORT)"
+
+$dbTargetValue = [Environment]::GetEnvironmentVariable('DB_TARGET', 'Process')
+if ([string]::IsNullOrWhiteSpace($dbTargetValue)) {
+  $dbTargetValue = 'remote'
+}
+$dbTarget = $dbTargetValue.Trim().ToLowerInvariant()
+$dbSection = if ($dbTarget -eq 'local') { 'mysql.local' } else { 'mysql.remote' }
+
+if ($credentialMap.ContainsKey($dbSection)) {
+  $dbConfig = $credentialMap[$dbSection]
+  if ($dbConfig.ContainsKey('host')) { Set-DefaultEnv -Name 'MYSQL_HOST' -Value $dbConfig['host'] }
+  if ($dbConfig.ContainsKey('port')) { Set-DefaultEnv -Name 'MYSQL_PORT' -Value $dbConfig['port'] }
+  if ($dbConfig.ContainsKey('database')) { Set-DefaultEnv -Name 'MYSQL_DATABASE' -Value $dbConfig['database'] }
+  if ($dbConfig.ContainsKey('user')) { Set-DefaultEnv -Name 'MYSQL_USER' -Value $dbConfig['user'] }
+  if ($dbConfig.ContainsKey('password')) { Set-DefaultEnv -Name 'MYSQL_PASSWORD' -Value $dbConfig['password'] }
+}
+
+if ($dbTarget -eq 'local') {
+  Set-DefaultEnv -Name 'MYSQL_HOST' -Value '127.0.0.1'
+  Set-DefaultEnv -Name 'MYSQL_PORT' -Value '3306'
+  Set-DefaultEnv -Name 'MYSQL_DATABASE' -Value 'crossborder_trend_demo'
+  Set-DefaultEnv -Name 'MYSQL_USER' -Value 'root'
+  Set-DefaultEnv -Name 'MYSQL_PASSWORD' -Value ''
+} else {
+  Set-DefaultEnv -Name 'MYSQL_HOST' -Value '101.132.78.217'
+  Set-DefaultEnv -Name 'MYSQL_PORT' -Value '3306'
+  Set-DefaultEnv -Name 'MYSQL_DATABASE' -Value 'crossborder_trend_demo'
+  Set-DefaultEnv -Name 'MYSQL_USER' -Value 'cross_demo'
+  Set-DefaultEnv -Name 'MYSQL_PASSWORD' -Value ''
+}
 
 if (Test-PortListening -Port ([int]$env:SERVER_PORT)) {
   throw "Port $($env:SERVER_PORT) is already in use. Run scripts\\stop-dev-windows.ps1 first."

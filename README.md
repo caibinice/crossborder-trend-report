@@ -1,6 +1,6 @@
-# 跨境电商日本热品日报 Demo
+# 跨境电商热品日报
 
-项目路径：`E:\codes\crossborder-trend-report`
+适用于跨境电商的销售热品日报前后端项目，springboot+vue3
 
 ## 功能概览
 
@@ -17,24 +17,47 @@
 - `scripts`：Windows / Ubuntu 启停脚本
 - `logs`：运行日志与进程状态文件（已忽略提交）
 
-## 本地环境变量
+## 启动配置
 
-先复制一份示例配置：
+默认启动目标已经改成远端数据库。
+
+敏感信息统一放在 `credentials.txt`，推荐使用 INI 格式：
+
+```ini
+[mysql.remote]
+host=101.132.78.217
+port=3306
+database=crossborder_trend_demo
+user=cross_demo
+password=your_password
+
+[mysql.local]
+host=127.0.0.1
+port=3306
+database=crossborder_trend_demo
+user=root
+password=
+```
+
+`.env` 只放非敏感开关，例如：
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-然后按实际情况修改 `.env`。
-
-常用变量：
+默认远端：
 
 ```env
-MYSQL_HOST=127.0.0.1
-MYSQL_PORT=3306
-MYSQL_DATABASE=crossborder_trend_demo
-MYSQL_USER=root
-MYSQL_PASSWORD=change_me
+DB_TARGET=remote
+SERVER_PORT=8090
+FRONTEND_HOST=127.0.0.1
+FRONTEND_PORT=5174
+```
+
+如果要切本地，可新建 `.env.local`：
+
+```env
+DB_TARGET=local
 SERVER_PORT=8090
 FRONTEND_HOST=127.0.0.1
 FRONTEND_PORT=5174
@@ -54,6 +77,7 @@ cd E:\codes\crossborder-trend-report
 ```powershell
 .\scripts\start-dev-windows.ps1 -ShowWindow
 .\scripts\start-dev-windows.ps1 -SkipInstall
+.\scripts\start-dev-windows.ps1 -EnvFile .\.env.local
 .\run-dev.ps1
 ```
 
