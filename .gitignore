@@ -39,3 +39,6 @@ Thumbs.db
 *.temp
 .cache/
 .mysql-local/
+
+# Git worktrees
+.worktrees/
