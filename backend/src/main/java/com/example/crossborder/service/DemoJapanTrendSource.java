@@ -31,10 +31,6 @@ public class DemoJapanTrendSource {
     add(items, "\u6587\u5177", "\u900f\u660e\u4ed8\u7b8b", "\u900f\u660e\u4fbf\u5229\u8d34\u5957\u88c5", "\u900f\u660e \u4fbf\u5229\u8d34", 73, 780, "\u5b66\u4e60\u529e\u516c\u573a\u666f\u7a33\u5b9a\u3002");
     add(items, "\u670d\u9970", "\u51b7\u611f\u30a2\u30fc\u30e0\u30ab\u30d0\u30fc", "\u51b0\u8896\u9632\u6652\u8896\u5957", "\u51b0\u8896 \u9632\u6652", 81, 1280, "\u590f\u5b63\u9632\u6652\u573a\u666f\u5f3a\u3002");
     add(items, "\u5065\u5eb7", "\u59ff\u52e2\u30b5\u30dd\u30fc\u30c8\u30af\u30c3\u30b7\u30e7\u30f3", "\u5750\u59ff\u77eb\u6b63\u9760\u57ab", "\u5750\u59ff \u9760\u57ab", 75, 2680, "\u529e\u516c\u4e45\u5750\u75db\u70b9\u660e\u786e\u3002");
-    for (int i = 0; i < 16; i++) {
-      TrendCandidate base = items.get(i % items.size());
-      items.add(new TrendCandidate(base.category(), base.productNameJp() + " " + (i + 1), base.productNameCn() + " ???" + (i + 1), base.keywords(), base.sourcePlatform(), base.sourceUrl(), Math.max(50, base.heatScore() - i - 3), base.jpPriceJpy().add(BigDecimal.valueOf((i + 1) * 60)), base.reason()));
-    }
     return items.stream().sorted(Comparator.comparingDouble(TrendCandidate::heatScore).reversed()).toList();
   }
   private void add(List<TrendCandidate> items, String cat, String jp, String cn, String kw, double heat, int jpy, String reason) {
