@@ -21,6 +21,14 @@ app:
     default-shipping-cny: ${DEFAULT_SHIPPING_CNY:18}
     source-mode: ${SOURCE_MODE:demo}
     max-products: ${MAX_PRODUCTS:20}
+    platform-fee-rate: ${PLATFORM_FEE_RATE:0.12}
+    payment-fee-rate: ${PAYMENT_FEE_RATE:0.03}
+    tax-rate: ${TAX_RATE:0}
+    default-ad-cost-cny: ${DEFAULT_AD_COST_CNY:0}
+  security:
+    enabled: ${AUTH_ENABLED:false}
+    jwt-secret: ${JWT_SECRET:dev-only-change-me}
+    jwt-expire-minutes: ${JWT_EXPIRE_MINUTES:720}
   sources:
     tiktok-mode: ${TIKTOK_MODE:demo}
     apify-token: ${APIFY_TOKEN:}

@@ -26,10 +26,11 @@ public class AdminController {
         boolean ok = adminData.validateLogin(request.username(), request.password());
         adminData.logLogin(ok ? adminData.tenantOf(request.username()) : "default", request.username(), http.getRemoteAddr(), ok ? "success" : "fail", ok ? "登录成功" : "账号或密码错误");
         if (!ok) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid credentials");
-        return new AdminLoginResponse(AdminAuthService.ADMIN_TOKEN, request.username());
+        return new AdminLoginResponse(auth.issue(request.username(), "admin"), request.username());
     }
 
-    @GetMapping("/profile") public AdminProfile profile(@RequestHeader(value="Authorization",required=false) String a){ requireAuth(a); return adminData.profile("admin"); }
+    @GetMapping("/auth/status") public Map<String,Object> authStatus(){ return Map.of("enabled", auth.enabled()); }
+    @GetMapping("/profile") public AdminProfile profile(@RequestHeader(value="Authorization",required=false) String a){ requireAuth(a); return adminData.profile(auth.claims(a).map(c -> c.username()).orElse("admin")); }
     @GetMapping("/settings") public AdminSettings get(@RequestHeader(value="Authorization",required=false) String a){ requireAuth(a); return settings.get(); }
     @PutMapping("/settings") public AdminSettings save(@RequestHeader(value="Authorization",required=false) String a,@RequestBody AdminSettings r){ requireAuth(a); AdminSettings out=settings.save(r); log("系统配置","保存","/settings","success","保存系统配置"); return out; }
 
