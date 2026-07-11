@@ -1,4 +1,4 @@
-export const API = import.meta.env.VITE_API_BASE || 'http://localhost:8090/api';
+export const API = import.meta.env.VITE_API_BASE || '/api';
 export const YEN = '¥';
 export const CNY = '￥';
 
