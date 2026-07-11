@@ -8,5 +8,5 @@ public class ReportController{
  @GetMapping("/reports") public List<TrendReport> reports(){return service.list();}
  @GetMapping("/reports/latest") public TrendReport latest(){return service.latest().orElseGet(()->service.collect(LocalDate.now()));}
  @GetMapping("/report") public TrendReport report(@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate date){return service.byDate(date).orElseGet(()->service.collect(date));}
- @PostMapping("/collect/run") public TrendReport run(@RequestBody(required=false) RunCollectRequest req){LocalDate d=req==null||req.reportDate()==null?LocalDate.now():req.reportDate();return service.collect(d);} }
+ @PostMapping("/collect/run") public TrendReport run(@RequestBody(required=false) RunCollectRequest req){LocalDate d=req==null||req.reportDate()==null?LocalDate.now():req.reportDate();return service.collect(d, req != null && Boolean.TRUE.equals(req.force()));} }
 

@@ -103,6 +103,14 @@ public class TrendRepository {
         return ids.stream().findFirst().map(this::mapReport);
     }
 
+    public Optional<TrendReport> byDateAndMode(LocalDate d, String mode) {
+        List<Long> ids = jdbc.query(
+            "SELECT id FROM trend_reports WHERE report_date=? AND source_mode=? ORDER BY created_at DESC LIMIT 1",
+            (rs, n) -> rs.getLong(1), java.sql.Date.valueOf(d), mode
+        );
+        return ids.stream().findFirst().map(this::mapReport);
+    }
+
     public List<TrendReport> list() {
         return jdbc.query(
             "SELECT id FROM trend_reports ORDER BY report_date DESC,created_at DESC LIMIT 30",
