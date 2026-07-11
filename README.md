@@ -72,6 +72,12 @@ cd E:\codes\crossborder-trend-report
 .\scripts\start-dev-windows.ps1
 ```
 
+启动命令默认后台启动并立即返回到当前 PowerShell。需要等待两个端口完成就绪检查时使用：
+
+```powershell
+.\scripts\start-dev-windows.ps1 -WaitForReady
+```
+
 可选参数：
 
 ```powershell

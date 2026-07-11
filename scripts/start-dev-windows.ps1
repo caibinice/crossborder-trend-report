@@ -1,10 +1,22 @@
 param(
   [switch]$SkipInstall,
   [switch]$ShowWindow,
+  [switch]$WaitForReady,
   [string]$EnvFile = ""
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Some terminals inherit both PATH and Path. Start-Process rejects that duplicate
+# environment key on Windows, so normalize it before spawning background processes.
+$processPath = [Environment]::GetEnvironmentVariable('Path', 'Process')
+if ([string]::IsNullOrWhiteSpace($processPath)) {
+  $processPath = [Environment]::GetEnvironmentVariable('PATH', 'Process')
+}
+[Environment]::SetEnvironmentVariable('PATH', $null, 'Process')
+if (-not [string]::IsNullOrWhiteSpace($processPath)) {
+  [Environment]::SetEnvironmentVariable('Path', $processPath, 'Process')
+}
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $logsDir = Join-Path $repoRoot 'logs'
@@ -225,7 +237,7 @@ $backendWrapper = Start-Process powershell `
   -RedirectStandardError $backendErrLog `
   -PassThru
 
-if (-not (Wait-PortReady -Port ([int]$env:SERVER_PORT) -TimeoutSeconds 90)) {
+if ($WaitForReady -and -not (Wait-PortReady -Port ([int]$env:SERVER_PORT) -TimeoutSeconds 90)) {
   throw "Backend did not start within 90 seconds. Check $backendLog and $backendErrLog."
 }
 
@@ -244,12 +256,12 @@ $frontendWrapper = Start-Process powershell `
   -RedirectStandardError $frontendErrLog `
   -PassThru
 
-if (-not (Wait-PortReady -Port ([int]$env:FRONTEND_PORT) -TimeoutSeconds 60)) {
+if ($WaitForReady -and -not (Wait-PortReady -Port ([int]$env:FRONTEND_PORT) -TimeoutSeconds 60)) {
   throw "Frontend did not start within 60 seconds. Check $frontendLog and $frontendErrLog."
 }
 
-$backendPid = Get-PortProcessId -Port ([int]$env:SERVER_PORT)
-$frontendPid = Get-PortProcessId -Port ([int]$env:FRONTEND_PORT)
+$backendPid = if ($WaitForReady) { Get-PortProcessId -Port ([int]$env:SERVER_PORT) } else { $null }
+$frontendPid = if ($WaitForReady) { Get-PortProcessId -Port ([int]$env:FRONTEND_PORT) } else { $null }
 
 $state = [ordered]@{
   startedAt = (Get-Date).ToString('s')
@@ -274,6 +286,7 @@ $state = [ordered]@{
 
 $state | ConvertTo-Json -Depth 5 | Set-Content -Path $stateFile -Encoding UTF8
 
-Write-Output "Backend:  http://localhost:$($env:SERVER_PORT) (PID: $backendPid)"
-Write-Output "Frontend: http://$($env:FRONTEND_HOST):$($env:FRONTEND_PORT) (PID: $frontendPid)"
+Write-Output "Backend starting:  http://localhost:$($env:SERVER_PORT)"
+Write-Output "Frontend starting: http://$($env:FRONTEND_HOST):$($env:FRONTEND_PORT)"
+if (-not $WaitForReady) { Write-Output "The command has returned. Run .\scripts\status-dev-windows.ps1 to check readiness, or add -WaitForReady to wait for both ports." }
 Write-Output "State file: $stateFile"
