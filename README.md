@@ -52,6 +52,8 @@ DB_TARGET=remote
 SERVER_PORT=8090
 FRONTEND_HOST=127.0.0.1
 FRONTEND_PORT=5174
+DB_POOL_MAX_SIZE=3
+DB_POOL_MIN_IDLE=0
 ```
 
 如果要切本地，可新建 `.env.local`：
@@ -144,10 +146,13 @@ chmod +x scripts/*.sh
 - `GET /api/admin/settings`
 - `PUT /api/admin/settings`
 
-## 数据库初始化
+## 数据库迁移与初始化
 
-- 初始化脚本：`backend/src/main/resources/schema.sql`
-- Spring Boot 启动时会按 `spring.sql.init.mode=always` 自动执行
+- 结构迁移：`backend/src/main/resources/db/migration/`
+- Spring Boot 使用 Flyway；已有数据库首次启动会以版本 `0` 建立基线并执行安全迁移。
+- 启动不再用演示 SQL 覆盖用户、角色、菜单、市场、品类、系统设置或管理员密码；首次**完全空库**只初始化一次，并记录初始化标记，之后不会因访问或重启补回已删除的数据。
+- 启用认证（`AUTH_ENABLED=true`）并首次初始化空库时，必须在 `.env` / 部署环境中设置 8–72 位的 `INITIAL_ADMIN_PASSWORD`。开发模式未设置时会生成随机初始密码，因开发鉴权默认关闭不影响本地调试。
+- 新建用户必须设置密码，已有明文密码会在首次成功登录后自动升级为 BCrypt 哈希。
 
 主要表：
 
@@ -176,3 +181,4 @@ chmod +x scripts/*.sh
 
 - 仓库内只保留示例配置，不提交真实账号、密码、Token
 - 生产环境建议接入正式鉴权、HTTPS、权限分级与审计
+- 前端依赖已锁定版本；缺少依赖时启动脚本使用 `npm ci` 安装。

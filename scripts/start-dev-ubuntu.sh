@@ -57,11 +57,15 @@ port_pid() {
 wait_port() {
   local port="$1"
   local timeout="$2"
+  local wrapper_pid="${3:-}"
   local start_ts
   start_ts="$(date +%s)"
   while true; do
     if ss -ltn "( sport = :$port )" 2>/dev/null | grep -q ":$port"; then
       return 0
+    fi
+    if [[ -n "$wrapper_pid" ]] && ! kill -0 "$wrapper_pid" 2>/dev/null; then
+      return 1
     fi
     if (( $(date +%s) - start_ts >= timeout )); then
       return 1
@@ -122,7 +126,7 @@ ensure_port_free "$SERVER_PORT"
 ensure_port_free "$FRONTEND_PORT"
 
 if [[ "$SKIP_INSTALL" != "1" && ! -d "$REPO_ROOT/frontend/node_modules" ]]; then
-  (cd "$REPO_ROOT/frontend" && npm install)
+  (cd "$REPO_ROOT/frontend" && npm ci)
 fi
 
 : > "$LOG_DIR/backend.log"
@@ -137,7 +141,7 @@ fi
 ) >"$LOG_DIR/backend.log" 2>"$LOG_DIR/backend.err.log" &
 BACKEND_WRAPPER_PID=$!
 
-if ! wait_port "$SERVER_PORT" 90; then
+if ! wait_port "$SERVER_PORT" 90 "$BACKEND_WRAPPER_PID"; then
   echo "Backend did not start within 90 seconds. Check $LOG_DIR/backend.log and $LOG_DIR/backend.err.log" >&2
   exit 1
 fi
@@ -148,7 +152,7 @@ fi
 ) >"$LOG_DIR/frontend.log" 2>"$LOG_DIR/frontend.err.log" &
 FRONTEND_WRAPPER_PID=$!
 
-if ! wait_port "$FRONTEND_PORT" 60; then
+if ! wait_port "$FRONTEND_PORT" 60 "$FRONTEND_WRAPPER_PID"; then
   echo "Frontend did not start within 60 seconds. Check $LOG_DIR/frontend.log and $LOG_DIR/frontend.err.log" >&2
   exit 1
 fi

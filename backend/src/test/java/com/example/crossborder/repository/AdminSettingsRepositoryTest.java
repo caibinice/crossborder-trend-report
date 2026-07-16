@@ -28,6 +28,7 @@ class AdminSettingsRepositoryTest {
         jdbcTemplate.execute("""
             CREATE TABLE admin_settings (
               id BIGINT PRIMARY KEY,
+              tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
               foreign_sources VARCHAR(512) NOT NULL,
               domestic_sources VARCHAR(512) NOT NULL,
               categories VARCHAR(1024) NOT NULL,
@@ -44,8 +45,8 @@ class AdminSettingsRepositoryTest {
     }
 
     @Test
-    void get_shouldSeedReadableChineseDefaults() {
-        repository.ensureDefault("default");
+    void createDefaultIfMissing_shouldSeedReadableChineseDefaults() {
+        repository.createDefaultIfMissing("default");
         AdminSettings settings = jdbcTemplate.queryForObject(
             "SELECT * FROM admin_settings WHERE tenant_id = ?",
             (rs, rowNum) -> new AdminSettings(
@@ -70,5 +71,17 @@ class AdminSettingsRepositoryTest {
         assertEquals(30, settings.maxProducts());
         assertEquals(new BigDecimal("0.048000"), settings.jpyCnyRate());
         assertEquals(new BigDecimal("18.00"), settings.defaultShippingCny());
+    }
+
+    @Test
+    void createDefaultIfMissing_doesNotOverwriteExistingConfiguration() {
+        repository.createDefaultIfMissing("default");
+        jdbcTemplate.update("UPDATE admin_settings SET max_products=?, frequency_cron=? WHERE tenant_id=?", 7, "0 0 9 * * *", "default");
+
+        repository.createDefaultIfMissing("default");
+
+        AdminSettings settings = repository.get();
+        assertEquals(7, settings.maxProducts());
+        assertEquals("0 0 9 * * *", settings.frequencyCron());
     }
 }

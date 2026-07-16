@@ -126,13 +126,17 @@ function Get-PortProcessId {
 function Wait-PortReady {
   param(
     [Parameter(Mandatory = $true)][int]$Port,
-    [Parameter(Mandatory = $true)][int]$TimeoutSeconds
+    [Parameter(Mandatory = $true)][int]$TimeoutSeconds,
+    [int]$WrapperProcessId = 0
   )
 
   $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
   do {
     if (Test-PortListening -Port $Port) {
       return $true
+    }
+    if ($WrapperProcessId -gt 0 -and -not (Get-Process -Id $WrapperProcessId -ErrorAction SilentlyContinue)) {
+      return $false
     }
     Start-Sleep -Seconds 1
   } while ((Get-Date) -lt $deadline)
@@ -203,7 +207,7 @@ if (-not $SkipInstall) {
   Push-Location (Join-Path $repoRoot 'frontend')
   try {
     if (-not (Test-Path 'node_modules')) {
-      npm install
+      npm.cmd ci
     }
   } finally {
     Pop-Location
@@ -211,6 +215,10 @@ if (-not $SkipInstall) {
 }
 
 $windowStyle = if ($ShowWindow) { 'Normal' } else { 'Hidden' }
+$shellExecutable = (Get-Command pwsh -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source)
+if ([string]::IsNullOrWhiteSpace($shellExecutable)) {
+  $shellExecutable = 'powershell.exe'
+}
 
 if (Test-Path $backendLog) { Remove-Item $backendLog -Force }
 if (Test-Path $backendErrLog) { Remove-Item $backendErrLog -Force }
@@ -230,14 +238,14 @@ Set-Location '$($repoRoot.Replace("'", "''"))\backend'
 mvn spring-boot:run
 "@
 
-$backendWrapper = Start-Process powershell `
+$backendWrapper = Start-Process $shellExecutable `
   -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $backendCommand `
   -WindowStyle $windowStyle `
   -RedirectStandardOutput $backendLog `
   -RedirectStandardError $backendErrLog `
   -PassThru
 
-if ($WaitForReady -and -not (Wait-PortReady -Port ([int]$env:SERVER_PORT) -TimeoutSeconds 90)) {
+if ($WaitForReady -and -not (Wait-PortReady -Port ([int]$env:SERVER_PORT) -TimeoutSeconds 90 -WrapperProcessId $backendWrapper.Id)) {
   throw "Backend did not start within 90 seconds. Check $backendLog and $backendErrLog."
 }
 
@@ -246,17 +254,17 @@ $frontendCommand = @"
 Set-Location '$($repoRoot.Replace("'", "''"))\frontend'
 `$env:VITE_HOST = '$($env:FRONTEND_HOST.Replace("'", "''"))'
 `$env:VITE_PORT = '$($env:FRONTEND_PORT.Replace("'", "''"))'
-npm run dev -- --host `$env:VITE_HOST --port `$env:VITE_PORT
+npm.cmd run dev -- --host `$env:VITE_HOST --port `$env:VITE_PORT
 "@
 
-$frontendWrapper = Start-Process powershell `
+$frontendWrapper = Start-Process $shellExecutable `
   -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $frontendCommand `
   -WindowStyle $windowStyle `
   -RedirectStandardOutput $frontendLog `
   -RedirectStandardError $frontendErrLog `
   -PassThru
 
-if ($WaitForReady -and -not (Wait-PortReady -Port ([int]$env:FRONTEND_PORT) -TimeoutSeconds 60)) {
+if ($WaitForReady -and -not (Wait-PortReady -Port ([int]$env:FRONTEND_PORT) -TimeoutSeconds 60 -WrapperProcessId $frontendWrapper.Id)) {
   throw "Frontend did not start within 60 seconds. Check $frontendLog and $frontendErrLog."
 }
 

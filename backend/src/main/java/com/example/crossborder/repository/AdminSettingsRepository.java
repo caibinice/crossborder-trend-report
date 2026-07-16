@@ -1,6 +1,7 @@
 package com.example.crossborder.repository;
 
 import com.example.crossborder.model.AdminSettings;
+import com.example.crossborder.service.ApiConflictException;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,9 +25,7 @@ public class AdminSettingsRepository {
     }
 
     public AdminSettings get(String tenantId) {
-        ensureTenantColumn();
-        ensureDefault(tenantId);
-        return jdbc.queryForObject(
+        return jdbc.query(
             "SELECT * FROM admin_settings WHERE tenant_id = ? ORDER BY id LIMIT 1",
             (rs, rowNum) -> new AdminSettings(
                 split(s(rs, "foreign_sources")),
@@ -40,7 +39,7 @@ public class AdminSettingsRepository {
                 rs.getBoolean("smart_mode")
             ),
             tenantId
-        );
+        ).stream().findFirst().orElseThrow(() -> new ApiConflictException("租户尚未完成系统配置初始化"));
     }
 
     public AdminSettings save(AdminSettings s) {
@@ -48,9 +47,7 @@ public class AdminSettingsRepository {
     }
 
     public AdminSettings save(String tenantId, AdminSettings s) {
-        ensureTenantColumn();
-        ensureDefault(tenantId);
-        jdbc.update("""
+        int updated = jdbc.update("""
             UPDATE admin_settings SET foreign_sources=?, domestic_sources=?, categories=?, regions=?, frequency_cron=?,
               max_products=?, jpy_cny_rate=?, default_shipping_cny=?, smart_mode=? WHERE tenant_id=?
             """,
@@ -65,13 +62,17 @@ public class AdminSettingsRepository {
             s.smartMode(),
             tenantId
         );
+        if (updated == 0) {
+            throw new ApiConflictException("租户尚未完成系统配置初始化");
+        }
         return get(tenantId);
     }
 
-    public void ensureDefault(String tenantId) {
-        ensureTenantColumn();
+    /** Called only by explicit bootstrap or tenant creation, never from a read request. */
+    public void createDefaultIfMissing(String tenantId) {
         Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM admin_settings WHERE tenant_id = ?", Integer.class, tenantId);
         if (count == null || count == 0) {
+            Long nextId = jdbc.queryForObject("SELECT COALESCE(MAX(id), 0) + 1 FROM admin_settings", Long.class);
             jdbc.update("""
                 INSERT INTO admin_settings(
                   id, tenant_id, foreign_sources, domestic_sources, categories, regions,
@@ -82,20 +83,9 @@ public class AdminSettingsRepository {
                   '日本', '0 30 8 * * *', 30, 0.048, 18, true
                 )
                 """,
-                "default".equals(tenantId) ? 1 : Math.abs(tenantId.hashCode()) + 1000L,
+                nextId == null ? 1L : nextId,
                 tenantId
             );
-        }
-    }
-
-    private void ensureTenantColumn() {
-        Integer exists = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'admin_settings' AND column_name = 'tenant_id'",
-            Integer.class
-        );
-        if (exists == null || exists == 0) {
-            jdbc.execute("ALTER TABLE admin_settings ADD COLUMN tenant_id VARCHAR(64) NOT NULL DEFAULT 'default'");
-            jdbc.execute("UPDATE admin_settings SET tenant_id='default' WHERE tenant_id IS NULL OR tenant_id='' ");
         }
     }
 

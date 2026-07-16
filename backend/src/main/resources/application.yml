@@ -5,10 +5,19 @@ spring:
     url: ${MYSQL_URL:jdbc:mysql://${MYSQL_HOST:101.132.78.217}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:crossborder_trend_demo}?useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
     username: ${MYSQL_USER:cross_demo}
     password: ${MYSQL_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:3}
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:10000}
+      validation-timeout: ${DB_VALIDATION_TIMEOUT_MS:5000}
   sql:
     init:
       encoding: UTF-8
-      mode: always
+      mode: never
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
 server:
   port: ${SERVER_PORT:8090}
 app:
@@ -29,6 +38,8 @@ app:
     enabled: ${AUTH_ENABLED:false}
     jwt-secret: ${JWT_SECRET:dev-only-change-me}
     jwt-expire-minutes: ${JWT_EXPIRE_MINUTES:720}
+  bootstrap:
+    initial-admin-password: ${INITIAL_ADMIN_PASSWORD:}
   sources:
     tiktok-mode: ${TIKTOK_MODE:demo}
     apify-token: ${APIFY_TOKEN:}

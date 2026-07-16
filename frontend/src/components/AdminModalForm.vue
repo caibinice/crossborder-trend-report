@@ -8,7 +8,7 @@
         <textarea v-else-if="field.type==='textarea'" v-model="draft[field.key]" />
         <input v-else-if="field.type==='checkbox'" type="checkbox" v-model="draft[field.key]" />
         <input v-else-if="field.type==='number'" type="number" v-model.number="draft[field.key]" />
-        <input v-else v-model="draft[field.key]" />
+        <input v-else :type="field.type==='password' ? 'password' : field.type==='email' ? 'email' : 'text'" v-model="draft[field.key]" />
       </label>
       <slot :draft="draft"></slot>
       <div class="modal-actions"><button>保存</button><button type="button" class="ghost" @click="$emit('cancel')">取消</button></div>
