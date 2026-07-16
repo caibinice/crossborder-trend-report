@@ -7,6 +7,7 @@
 - 前台选品大屏：市场导航、商品卡片、筛选列表
 - 独立后台：`/admin`
 - 后台菜单：用户管理、角色管理、菜单管理、数据源配置、市场配置、品类配置、采集频率配置、日报记录、商品池
+- 后台支持登录、主动注销、会话过期回登录页及登录/注销审计；开发模式可直接进入，但主动注销后仍需重新登录。
 - 默认管理员：`admin / admin`
 - 后端支持动态调度与报表配置
 
@@ -136,6 +137,7 @@ chmod +x scripts/*.sh
 - `GET /api/report?date=2026-07-07`
 - `POST /api/collect/run`
 - `POST /api/admin/login`
+- `POST /api/admin/logout`
 - `GET /api/admin/profile`
 - `GET /api/admin/menus`
 - `GET /api/admin/users`

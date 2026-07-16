@@ -80,6 +80,18 @@ public class AdminController {
         return Map.of("enabled", auth.enabled());
     }
 
+    @PostMapping("/logout")
+    public Map<String, Object> logout(
+        @RequestHeader(value = "Authorization", required = false) String authorization,
+        HttpServletRequest http
+    ) {
+        requireAuth(authorization);
+        AdminDataRepository.AdminActor current = actor(authorization);
+        adminData.logOper(current.tenantId(), current.username(), "登录认证", "注销", "/logout", "success", "用户主动退出后台");
+        adminData.logLogin(current.tenantId(), current.username(), clientIp(http), "success", "退出登录");
+        return Map.of("loggedOut", true, "message", "已退出登录");
+    }
+
     @GetMapping("/profile")
     public AdminProfile profile(@RequestHeader(value = "Authorization", required = false) String authorization) {
         requireAuth(authorization);

@@ -1,10 +1,12 @@
 <template>
-  <section v-if="authEnabled && !token" class="admin-login-page">
+  <section v-if="showLogin" class="admin-login-page">
     <form class="admin-login-card" @submit.prevent="doLogin">
       <h1>若依管理后台</h1><p>跨境选品系统</p>
+      <p class="login-mode">{{ authEnabled ? 'JWT 鉴权已开启' : '开发模式 · 登录后进入后台会话' }}</p>
       <label>账号<input v-model.trim="login.username" autocomplete="username" /></label>
       <label>密码<input v-model="login.password" type="password" autocomplete="current-password" /></label>
       <button :disabled="loggingIn">{{ loggingIn ? '登录中...' : '登录' }}</button>
+      <RouterLink class="login-back" to="/">返回报表首页</RouterLink>
       <p v-if="notice.text" :class="['notice', notice.type]">{{ notice.text }}</p>
     </form>
   </section>
@@ -22,7 +24,10 @@
     <main class="ruoyi-main">
       <header class="ruoyi-topbar">
         <div><strong>{{ activeTitle }}</strong><small>首页 / {{ activeTitle }}</small></div>
-        <div class="ruoyi-user"><span>{{ profile?.nickname || '加载中' }}（{{ profile?.tenantId || 'default' }}）</span><button v-if="authEnabled" class="ghost" @click="logout">退出</button></div>
+        <div class="ruoyi-user">
+          <span><strong>{{ profile?.nickname || '加载中' }}</strong><small>{{ profile?.username || 'admin' }} · {{ profile?.tenantId || 'default' }}</small></span>
+          <button class="ghost" :disabled="loggingOut" @click="logout">{{ loggingOut ? '注销中...' : '注销登录' }}</button>
+        </div>
       </header>
       <div class="ruoyi-tags"><span>首页</span><span>{{ activeTitle }}</span></div>
 
@@ -81,9 +86,11 @@ import AdminSettingsForm from './AdminSettingsForm.vue';
 const route = useRoute();
 const router = useRouter();
 const token = ref(localStorage.getItem('adminToken') || '');
-const login = reactive({ username: 'admin', password: 'admin' });
+const signedOut = ref(localStorage.getItem('adminSignedOut') === 'true');
+const login = reactive({ username: 'admin', password: '' });
 const authEnabled = ref(null);
 const loggingIn = ref(false);
+const loggingOut = ref(false);
 const loaded = ref(false);
 const notice = reactive({ type: '', text: '' });
 const profile = ref(null);
@@ -129,6 +136,7 @@ const menuById = computed(() => new Map(flatMenus.value.map((menu) => [menu.id, 
 const visibleMenus = computed(() => flatMenus.value.filter((menu) => menu.parentId === 0 || expandedMenus.value.has(menuById.value.get(menu.parentId)?.menuKey)));
 const activeMenu = computed(() => flatMenus.value.find((menu) => menu.path === route.path)?.menuKey || routeMenuKeys[route.path] || 'dashboard');
 const activeTitle = computed(() => flatMenus.value.find((menu) => menu.menuKey === activeMenu.value)?.title || fallbackTitles[activeMenu.value] || '首页 / 工作台');
+const showLogin = computed(() => signedOut.value || (authEnabled.value === true && !token.value));
 
 function flatten(items) { return (items || []).flatMap((menu) => [menu, ...(menu.children ? flatten(menu.children) : [])]); }
 function removeTenant(items) { return (items || []).filter((menu) => menu.menuKey !== 'tenants').map((menu) => ({ ...menu, children: removeTenant(menu.children) })); }
@@ -136,7 +144,11 @@ function tenantParam() { return encodeURIComponent(profile.value?.tenantId || 'd
 function currentTenantRow(row) { return { ...row, tenantId: profile.value?.tenantId || 'default' }; }
 function setNotice(type, text) { notice.type = type; notice.text = text || ''; }
 function errorMessage(error) { return error?.message || '请求失败，请稍后重试'; }
-async function adminApi(path, options = {}) { return api(path, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token.value}` } }); }
+async function adminApi(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (token.value) headers.Authorization = `Bearer ${token.value}`;
+  return api(path, { ...options, headers });
+}
 
 function selectMenu(menu) {
   if (menu.component === 'Layout') {
@@ -154,22 +166,69 @@ async function doLogin() {
     const response = await api('/admin/login', { method: 'POST', body: JSON.stringify(login) });
     token.value = response.token;
     localStorage.setItem('adminToken', response.token);
-    await loadAll();
-    setNotice('success', '登录成功');
+    localStorage.removeItem('adminSignedOut');
+    signedOut.value = false;
+    login.password = '';
+    const success = await loadAll();
+    if (success) {
+      setNotice('success', `欢迎回来，${response.username}`);
+    } else {
+      clearSession();
+    }
   } catch (error) {
+    login.password = '';
     setNotice('error', errorMessage(error));
   } finally {
     loggingIn.value = false;
   }
 }
 
-function logout() { localStorage.removeItem('adminToken'); token.value = ''; if (authEnabled.value) window.location.assign('/admin'); }
+function resetSessionData() {
+  loaded.value = false;
+  profile.value = null;
+  menus.value = [];
+  users.value = [];
+  roles.value = [];
+  dictTypes.value = [];
+  dictData.value = [];
+  configs.value = [];
+  operLogs.value = [];
+  loginLogs.value = [];
+  markets.value = [];
+  categories.value = [];
+  settings.value = null;
+  sources.value = [];
+  reportSummaries.value = [];
+  productPool.value = [];
+}
+
+function clearSession(message, type = 'success') {
+  localStorage.removeItem('adminToken');
+  localStorage.setItem('adminSignedOut', 'true');
+  token.value = '';
+  signedOut.value = true;
+  resetSessionData();
+  if (message) setNotice(type, message);
+}
+
+async function logout() {
+  loggingOut.value = true;
+  try {
+    await adminApi('/admin/logout', { method: 'POST' });
+  } catch (error) {
+    if (error?.status !== 401) setNotice('error', errorMessage(error));
+  } finally {
+    clearSession('已注销，请重新登录');
+    await router.replace('/admin');
+    loggingOut.value = false;
+  }
+}
 
 async function loadAll() {
   try {
     const status = await api('/admin/auth/status');
     authEnabled.value = status.enabled;
-    if (status.enabled && !token.value) return;
+    if (signedOut.value || (status.enabled && !token.value)) return true;
     const [profileData, menuData, settingData, sourceData, summaryData] = await Promise.all([
       adminApi('/admin/profile'), adminApi('/admin/menus'), adminApi('/admin/settings'), api('/datasources'), api('/reports/summaries?limit=30'),
     ]);
@@ -177,8 +236,14 @@ async function loadAll() {
     await reloadCoreLists();
     loaded.value = true;
     await loadActiveData(activeMenu.value);
+    return true;
   } catch (error) {
-    setNotice('error', errorMessage(error));
+    if (error?.status === 401) {
+      clearSession('登录已过期，请重新登录', 'error');
+    } else {
+      setNotice('error', errorMessage(error));
+    }
+    return false;
   }
 }
 
