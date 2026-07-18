@@ -33,9 +33,11 @@ class AdminSettingsRepositoryTest {
               domestic_sources VARCHAR(512) NOT NULL,
               categories VARCHAR(1024) NOT NULL,
               regions VARCHAR(512) NOT NULL,
+              source_mode VARCHAR(16) NOT NULL,
               frequency_cron VARCHAR(64) NOT NULL,
               max_products INT NOT NULL,
               jpy_cny_rate DECIMAL(10,6) NOT NULL,
+              auto_exchange_rate BOOLEAN NOT NULL,
               default_shipping_cny DECIMAL(12,2) NOT NULL,
               smart_mode BOOLEAN NOT NULL
             )
@@ -54,22 +56,25 @@ class AdminSettingsRepositoryTest {
                 List.of(rs.getString("domestic_sources").split(",")),
                 List.of(rs.getString("categories").split(",")),
                 List.of(rs.getString("regions").split(",")),
+                rs.getString("source_mode"),
                 rs.getString("frequency_cron"),
                 rs.getInt("max_products"),
                 rs.getBigDecimal("jpy_cny_rate"),
+                rs.getBoolean("auto_exchange_rate"),
                 rs.getBigDecimal("default_shipping_cny"),
                 rs.getBoolean("smart_mode")
             ),
             "default"
         );
 
-        assertIterableEquals(List.of("TikTok/Apify", "Amazon/Rainforest", "Amazon/Keepa"), settings.foreignSources());
+        assertIterableEquals(List.of("WooCommerce公开目录", "Google Trends", "Yahoo Shopping", "Rakuten"), settings.foreignSources());
         assertIterableEquals(List.of("1688", "Taobao", "Pinduoduo"), settings.domesticSources());
-        assertIterableEquals(List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "汽车", "厨房", "文具", "服饰", "健康"), settings.categories());
+        assertIterableEquals(List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "汽车", "厨房", "文具", "服饰", "健康", "食品"), settings.categories());
         assertIterableEquals(List.of("日本"), settings.regions());
         assertEquals("0 30 8 * * *", settings.frequencyCron());
         assertEquals(30, settings.maxProducts());
         assertEquals(new BigDecimal("0.048000"), settings.jpyCnyRate());
+        assertEquals("external", settings.sourceMode());
         assertEquals(new BigDecimal("18.00"), settings.defaultShippingCny());
     }
 

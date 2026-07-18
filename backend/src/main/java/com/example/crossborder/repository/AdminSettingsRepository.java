@@ -32,9 +32,11 @@ public class AdminSettingsRepository {
                 split(s(rs, "domestic_sources")),
                 split(s(rs, "categories")),
                 split(s(rs, "regions")),
+                s(rs, "source_mode"),
                 s(rs, "frequency_cron"),
                 rs.getInt("max_products"),
                 rs.getBigDecimal("jpy_cny_rate"),
+                rs.getBoolean("auto_exchange_rate"),
                 rs.getBigDecimal("default_shipping_cny"),
                 rs.getBoolean("smart_mode")
             ),
@@ -48,16 +50,18 @@ public class AdminSettingsRepository {
 
     public AdminSettings save(String tenantId, AdminSettings s) {
         int updated = jdbc.update("""
-            UPDATE admin_settings SET foreign_sources=?, domestic_sources=?, categories=?, regions=?, frequency_cron=?,
-              max_products=?, jpy_cny_rate=?, default_shipping_cny=?, smart_mode=? WHERE tenant_id=?
+            UPDATE admin_settings SET foreign_sources=?, domestic_sources=?, categories=?, regions=?, source_mode=?, frequency_cron=?,
+              max_products=?, jpy_cny_rate=?, auto_exchange_rate=?, default_shipping_cny=?, smart_mode=? WHERE tenant_id=?
             """,
             join(s.foreignSources()),
             join(s.domesticSources()),
             join(s.categories()),
             join(s.regions()),
+            sourceMode(s.sourceMode()),
             blankDefault(s.frequencyCron(), "0 30 8 * * *"),
             Math.max(1, s.maxProducts()),
             nonNull(s.jpyCnyRate(), "0.048"),
+            s.autoExchangeRate(),
             nonNull(s.defaultShippingCny(), "18"),
             s.smartMode(),
             tenantId
@@ -75,12 +79,12 @@ public class AdminSettingsRepository {
             Long nextId = jdbc.queryForObject("SELECT COALESCE(MAX(id), 0) + 1 FROM admin_settings", Long.class);
             jdbc.update("""
                 INSERT INTO admin_settings(
-                  id, tenant_id, foreign_sources, domestic_sources, categories, regions,
-                  frequency_cron, max_products, jpy_cny_rate, default_shipping_cny, smart_mode
+                  id, tenant_id, foreign_sources, domestic_sources, categories, regions, source_mode,
+                  frequency_cron, max_products, jpy_cny_rate, auto_exchange_rate, default_shipping_cny, smart_mode
                 ) VALUES(
-                  ?, ?, 'TikTok/Apify,Amazon/Rainforest,Amazon/Keepa', '1688,Taobao,Pinduoduo',
-                  '玩具,家居,美妆,宠物,数码,户外,母婴,汽车,厨房,文具,服饰,健康',
-                  '日本', '0 30 8 * * *', 30, 0.048, 18, true
+                  ?, ?, 'WooCommerce公开目录,Google Trends,Yahoo Shopping,Rakuten', '1688,Taobao,Pinduoduo',
+                  '玩具,家居,美妆,宠物,数码,户外,母婴,汽车,厨房,文具,服饰,健康,食品',
+                  '日本', 'external', '0 30 8 * * *', 30, 0.048, true, 18, true
                 )
                 """,
                 nextId == null ? 1L : nextId,
@@ -106,6 +110,13 @@ public class AdminSettingsRepository {
 
     private BigDecimal nonNull(BigDecimal value, String fallback) {
         return value == null ? new BigDecimal(fallback) : value;
+    }
+
+    private String sourceMode(String value) {
+        return switch (value == null ? "" : value.trim().toLowerCase()) {
+            case "demo", "mixed" -> value.trim().toLowerCase();
+            default -> "external";
+        };
     }
 
     private String s(ResultSet rs, String column) throws SQLException {

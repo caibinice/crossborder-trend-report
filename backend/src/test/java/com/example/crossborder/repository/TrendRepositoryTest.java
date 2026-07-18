@@ -58,7 +58,11 @@ class TrendRepositoryTest {
               keywords VARCHAR(255) NOT NULL,
               source_platform VARCHAR(64) NOT NULL,
               source_url VARCHAR(1024),
+              image_url VARCHAR(1024),
               heat_score DOUBLE NOT NULL,
+              source_price DECIMAL(14,4),
+              source_currency VARCHAR(3),
+              source_price_cny DECIMAL(14,2),
               jp_price_jpy DECIMAL(12,2),
               jp_price_cny DECIMAL(12,2),
               domestic_cost_cny DECIMAL(12,2),
@@ -107,8 +111,12 @@ class TrendRepositoryTest {
 
     private void insertProduct(long id, long reportId, int rank, String name) {
         jdbc.update("""
-            INSERT INTO trend_products VALUES(?, 'default', ?, ?, '玩具', ?, ?, '关键词', 'demo', 'https://example.com', 90,
-              100, 5, 2, 1, 2, 0.4, '原因')
+            INSERT INTO trend_products(
+              id,tenant_id,report_id,product_rank,category,product_name_jp,product_name_cn,keywords,
+              source_platform,source_url,image_url,heat_score,source_price,source_currency,source_price_cny,
+              jp_price_jpy,jp_price_cny,domestic_cost_cny,shipping_cny,estimated_profit_cny,estimated_margin,reason
+            ) VALUES(?, 'default', ?, ?, '玩具', ?, ?, '关键词', 'demo', 'https://example.com', null, 90,
+              100, 'JPY', 5, 100, 5, 2, 1, 2, 0.4, '原因')
             """, id, reportId, rank, name + " 日文", name);
     }
 

@@ -2,6 +2,7 @@ package com.example.crossborder.controller;
 
 import com.example.crossborder.service.ApiConflictException;
 import com.example.crossborder.service.ApiValidationException;
+import com.example.crossborder.service.DataSourceAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -25,6 +26,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ApiConflictException.class)
     public ResponseEntity<ApiError> conflict(ApiConflictException exception, HttpServletRequest request) {
         return response(HttpStatus.CONFLICT, "CONFLICT", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(DataSourceAccessException.class)
+    public ResponseEntity<ApiError> upstream(DataSourceAccessException exception, HttpServletRequest request) {
+        return response(HttpStatus.BAD_GATEWAY, "UPSTREAM_ERROR", exception.getMessage(), request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

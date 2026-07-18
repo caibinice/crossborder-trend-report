@@ -6,9 +6,11 @@ public record AdminSettings(
     List<String> domesticSources,
     List<String> categories,
     List<String> regions,
+    String sourceMode,
     String frequencyCron,
     int maxProducts,
     BigDecimal jpyCnyRate,
+    boolean autoExchangeRate,
     BigDecimal defaultShippingCny,
     boolean smartMode
 ) {}

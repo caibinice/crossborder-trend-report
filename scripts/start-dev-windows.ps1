@@ -75,6 +75,10 @@ function Import-IniFile {
 
     $parts = $line.Split('=', 2)
     if ($parts.Count -ne 2) {
+      if ($section -and -not $result[$section].ContainsKey('token')) {
+        # Also support credential sections that contain a single raw token line.
+        $result[$section]['token'] = $line
+      }
       return
     }
 
@@ -180,6 +184,33 @@ if ($credentialMap.ContainsKey($dbSection)) {
   if ($dbConfig.ContainsKey('user')) { Set-DefaultEnv -Name 'MYSQL_USER' -Value $dbConfig['user'] }
   if ($dbConfig.ContainsKey('password')) { Set-DefaultEnv -Name 'MYSQL_PASSWORD' -Value $dbConfig['password'] }
 }
+
+function Set-CredentialEnv {
+  param(
+    [Parameter(Mandatory = $true)][string[]]$Sections,
+    [Parameter(Mandatory = $true)][string[]]$Keys,
+    [Parameter(Mandatory = $true)][string]$EnvName
+  )
+
+  foreach ($sectionName in $Sections) {
+    $normalizedSection = $sectionName.ToLowerInvariant()
+    if (-not $credentialMap.ContainsKey($normalizedSection)) { continue }
+    foreach ($keyName in $Keys) {
+      $normalizedKey = $keyName.ToLowerInvariant()
+      if ($credentialMap[$normalizedSection].ContainsKey($normalizedKey)) {
+        Set-DefaultEnv -Name $EnvName -Value $credentialMap[$normalizedSection][$normalizedKey]
+        return
+      }
+    }
+  }
+}
+
+Set-CredentialEnv -Sections @('deepseek.api', 'deepseek') -Keys @('api_key', 'token', 'key') -EnvName 'DEEPSEEK_API_KEY'
+Set-CredentialEnv -Sections @('rakuten.api', 'rakuten') -Keys @('application_id', 'appid') -EnvName 'RAKUTEN_APPLICATION_ID'
+Set-CredentialEnv -Sections @('rakuten.api', 'rakuten') -Keys @('access_key', 'accesskey') -EnvName 'RAKUTEN_ACCESS_KEY'
+Set-CredentialEnv -Sections @('yahoo.shopping', 'yahoo.api') -Keys @('client_id', 'appid') -EnvName 'YAHOO_SHOPPING_CLIENT_ID'
+Set-CredentialEnv -Sections @('rainforest.api', 'rainforest') -Keys @('api_key', 'key', 'token') -EnvName 'RAINFOREST_API_KEY'
+Set-CredentialEnv -Sections @('apify.api', 'apify') -Keys @('api_token', 'token') -EnvName 'APIFY_TOKEN'
 
 if ($dbTarget -eq 'local') {
   Set-DefaultEnv -Name 'MYSQL_HOST' -Value '127.0.0.1'

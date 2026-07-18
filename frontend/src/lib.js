@@ -32,12 +32,35 @@ export function money(value, unit = CNY) {
   return `${unit}${Number(value).toFixed(2)}`;
 }
 
+export function currencyMoney(value, currency = 'CNY') {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
+  const code = /^[A-Z]{3}$/.test(currency || '') ? currency : 'CNY';
+  try {
+    return new Intl.NumberFormat('zh-CN', { style: 'currency', currency: code, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value));
+  } catch {
+    return `${code} ${Number(value).toFixed(2)}`;
+  }
+}
+
 export function pct(value) {
   return `${(Number(value || 0) * 100).toFixed(1)}%`;
 }
 
 export function regionOf(product) {
   return `${product.sourcePlatform || ''} ${product.sourceUrl || ''}`.toLowerCase().match(/jp|japan|co\.jp|tiktok/) ? '日本' : '未知';
+}
+
+export function isDemoProduct(product) {
+  return `${product?.sourcePlatform || ''}`.toLowerCase().includes('demo');
+}
+
+export function formatDateTime(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(date);
 }
 
 export function searchableText(product) {

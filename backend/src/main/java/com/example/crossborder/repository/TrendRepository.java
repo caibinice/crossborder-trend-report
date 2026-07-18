@@ -75,9 +75,9 @@ public class TrendRepository {
             PreparedStatement statement = connection.prepareStatement("""
                 INSERT INTO trend_products(
                   tenant_id,report_id,product_rank,category,product_name_jp,product_name_cn,keywords,
-                  source_platform,source_url,heat_score,jp_price_jpy,jp_price_cny,domestic_cost_cny,
-                  shipping_cny,estimated_profit_cny,estimated_margin,reason
-                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                  source_platform,source_url,image_url,heat_score,source_price,source_currency,source_price_cny,
+                  jp_price_jpy,jp_price_cny,domestic_cost_cny,shipping_cny,estimated_profit_cny,estimated_margin,reason
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, DEFAULT_TENANT);
             statement.setLong(2, product.reportId());
@@ -88,14 +88,18 @@ public class TrendRepository {
             statement.setString(7, product.keywords());
             statement.setString(8, product.sourcePlatform());
             statement.setString(9, product.sourceUrl());
-            statement.setDouble(10, product.heatScore());
-            statement.setBigDecimal(11, product.jpPriceJpy());
-            statement.setBigDecimal(12, product.jpPriceCny());
-            statement.setBigDecimal(13, product.domesticCostCny());
-            statement.setBigDecimal(14, product.shippingCny());
-            statement.setBigDecimal(15, product.estimatedProfitCny());
-            statement.setDouble(16, product.estimatedMargin());
-            statement.setString(17, product.reason());
+            statement.setString(10, product.imageUrl());
+            statement.setDouble(11, product.heatScore());
+            statement.setBigDecimal(12, product.sourcePrice());
+            statement.setString(13, product.sourceCurrency());
+            statement.setBigDecimal(14, product.sourcePriceCny());
+            statement.setBigDecimal(15, product.jpPriceJpy());
+            statement.setBigDecimal(16, product.sourcePriceCny());
+            statement.setBigDecimal(17, product.domesticCostCny());
+            statement.setBigDecimal(18, product.shippingCny());
+            statement.setBigDecimal(19, product.estimatedProfitCny());
+            statement.setDouble(20, product.estimatedMargin());
+            statement.setString(21, product.reason());
             return statement;
         }, keyHolder);
         long productId = keyHolder.getKey().longValue();
@@ -213,8 +217,9 @@ public class TrendRepository {
     private TrendProduct mapProduct(ProductRow row, Map<Long, List<DomesticLink>> links) {
         return new TrendProduct(
             row.id(), row.reportId(), row.rank(), row.category(), row.productNameJp(), row.productNameCn(), row.keywords(),
-            row.sourcePlatform(), row.sourceUrl(), row.heatScore(), row.jpPriceJpy(), row.jpPriceCny(), row.domesticCostCny(),
-            row.shippingCny(), row.estimatedProfitCny(), row.estimatedMargin(), row.reason(), links.getOrDefault(row.id(), List.of())
+            row.sourcePlatform(), row.sourceUrl(), row.imageUrl(), row.heatScore(), row.sourcePrice(), row.sourceCurrency(),
+            row.sourcePriceCny(), row.domesticCostCny(), row.shippingCny(), row.estimatedProfitCny(), row.estimatedMargin(),
+            row.reason(), links.getOrDefault(row.id(), List.of())
         );
     }
 
@@ -246,8 +251,8 @@ public class TrendRepository {
 
     private record ProductRow(
         long id, long reportId, int rank, String category, String productNameJp, String productNameCn, String keywords,
-        String sourcePlatform, String sourceUrl, double heatScore, java.math.BigDecimal jpPriceJpy,
-        java.math.BigDecimal jpPriceCny, java.math.BigDecimal domesticCostCny, java.math.BigDecimal shippingCny,
+        String sourcePlatform, String sourceUrl, String imageUrl, double heatScore, java.math.BigDecimal sourcePrice,
+        String sourceCurrency, java.math.BigDecimal sourcePriceCny, java.math.BigDecimal domesticCostCny, java.math.BigDecimal shippingCny,
         java.math.BigDecimal estimatedProfitCny, double estimatedMargin, String reason
     ) {}
 
@@ -264,8 +269,8 @@ public class TrendRepository {
         return (rs, rowNum) -> new ProductRow(
             rs.getLong("id"), rs.getLong("report_id"), rs.getInt("product_rank"), s(rs, "category"),
             s(rs, "product_name_jp"), s(rs, "product_name_cn"), s(rs, "keywords"), s(rs, "source_platform"),
-            s(rs, "source_url"), rs.getDouble("heat_score"), rs.getBigDecimal("jp_price_jpy"),
-            rs.getBigDecimal("jp_price_cny"), rs.getBigDecimal("domestic_cost_cny"), rs.getBigDecimal("shipping_cny"),
+            s(rs, "source_url"), s(rs, "image_url"), rs.getDouble("heat_score"), rs.getBigDecimal("source_price"),
+            s(rs, "source_currency"), rs.getBigDecimal("source_price_cny"), rs.getBigDecimal("domestic_cost_cny"), rs.getBigDecimal("shipping_cny"),
             rs.getBigDecimal("estimated_profit_cny"), rs.getDouble("estimated_margin"), s(rs, "reason")
         );
     }

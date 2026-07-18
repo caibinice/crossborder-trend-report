@@ -28,7 +28,7 @@ app:
     zone: ${REPORT_ZONE:Asia/Shanghai}
     exchange-rate-jpy-cny: ${JPY_CNY_RATE:0.048}
     default-shipping-cny: ${DEFAULT_SHIPPING_CNY:18}
-    source-mode: ${SOURCE_MODE:demo}
+    source-mode: ${SOURCE_MODE:external}
     max-products: ${MAX_PRODUCTS:20}
     platform-fee-rate: ${PLATFORM_FEE_RATE:0.12}
     payment-fee-rate: ${PAYMENT_FEE_RATE:0.03}
@@ -41,6 +41,11 @@ app:
   bootstrap:
     initial-admin-password: ${INITIAL_ADMIN_PASSWORD:}
   sources:
+    google-trends-enabled: ${GOOGLE_TRENDS_ENABLED:true}
+    google-trends-regions: ${GOOGLE_TRENDS_REGIONS:JP,US,SG}
+    frankfurter-enabled: ${FRANKFURTER_ENABLED:true}
+    woocommerce-enabled: ${WOOCOMMERCE_ENABLED:true}
+    woocommerce-store-urls: ${WOOCOMMERCE_STORE_URLS:https://www.somethingfromjapan.com}
     tiktok-mode: ${TIKTOK_MODE:demo}
     apify-token: ${APIFY_TOKEN:}
     apify-tik-tok-actor: ${APIFY_TIKTOK_ACTOR:clockworks/tiktok-scraper}
@@ -50,4 +55,14 @@ app:
     rainforest-api-key: ${RAINFOREST_API_KEY:}
     keepa-api-key: ${KEEPA_API_KEY:}
     serpapi-key: ${SERPAPI_KEY:}
+    rakuten-application-id: ${RAKUTEN_APPLICATION_ID:}
+    rakuten-access-key: ${RAKUTEN_ACCESS_KEY:}
+    rakuten-api-version: ${RAKUTEN_API_VERSION:20260701}
+    yahoo-shopping-client-id: ${YAHOO_SHOPPING_CLIENT_ID:}
     supplier-mode: ${SUPPLIER_MODE:search-link}
+    outbound-proxy: ${OUTBOUND_HTTP_PROXY:}
+  ai:
+    enabled: ${AI_ENRICHMENT_ENABLED:true}
+    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    api-key: ${DEEPSEEK_API_KEY:}
+    model: ${DEEPSEEK_MODEL:deepseek-chat}

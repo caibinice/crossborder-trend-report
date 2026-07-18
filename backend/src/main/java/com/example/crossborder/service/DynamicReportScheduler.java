@@ -12,11 +12,19 @@ import org.springframework.scheduling.support.CronTrigger;
 public class DynamicReportScheduler implements SchedulingConfigurer {
     private final TrendReportService reports;
     private final AdminSettingsService settings;
-    public DynamicReportScheduler(TrendReportService reports, AdminSettingsService settings) { this.reports = reports; this.settings = settings; }
+    private final SourceOperationsService sources;
+    public DynamicReportScheduler(TrendReportService reports, AdminSettingsService settings, SourceOperationsService sources) {
+        this.reports = reports;
+        this.settings = settings;
+        this.sources = sources;
+    }
     @Override
     public void configureTasks(ScheduledTaskRegistrar registrar) {
         registrar.addTriggerTask(
-            () -> reports.collect(LocalDate.now()),
+            () -> {
+                sources.collectScheduledSignals();
+                reports.collect(LocalDate.now());
+            },
             triggerContext -> new CronTrigger(settings.get().frequencyCron(), ZoneId.of("Asia/Shanghai")).nextExecution(triggerContext)
         );
     }

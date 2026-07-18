@@ -1,8 +1,8 @@
 <template>
   <section class="admin-panel">
     <div class="crud-head">
-      <div><h2>{{ title }}</h2><p v-if="description" class="muted">{{ description }}</p></div>
-      <button @click="editing = { ...empty }">新增</button>
+      <div><span class="overline">MANAGEMENT</span><h2>{{ title }}</h2><p v-if="description" class="muted">{{ description }}</p></div>
+      <button class="primary-button" @click="editing = { ...empty }">新增{{ title.replace('管理', '') }}</button>
     </div>
     <slot name="before" />
     <AdminDataTable :rows="rows" :columns="columns" actions @edit="editing = { ...$event }" @delete="$emit('delete', $event)" />

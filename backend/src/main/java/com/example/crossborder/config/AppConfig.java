@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
-@EnableConfigurationProperties({ReportProperties.class, SourceProperties.class, SecurityProperties.class, BootstrapProperties.class})
+@EnableConfigurationProperties({ReportProperties.class, SourceProperties.class, AiProperties.class, SecurityProperties.class, BootstrapProperties.class})
 public class AppConfig implements WebMvcConfigurer {
   @Value("${app.cors.allowed-origins}") private String allowedOrigins;
   @Override public void addCorsMappings(CorsRegistry registry){

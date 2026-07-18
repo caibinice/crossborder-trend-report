@@ -35,6 +35,7 @@ public class AdminInputValidator {
         requireDecimal(settings.defaultShippingCny(), BigDecimal.ZERO, new BigDecimal("100000"), true, "默认物流成本不合法");
         requireList(settings.categories(), "至少配置一个品类");
         requireList(settings.regions(), "至少配置一个区域");
+        require(List.of("demo", "external", "mixed").contains(settings.sourceMode()), "数据模式只能为 demo、external 或 mixed");
     }
 
     public void validateUser(AdminUser user, boolean creating) {

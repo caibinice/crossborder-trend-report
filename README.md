@@ -1,15 +1,17 @@
 # 跨境电商热品日报
 
-适用于跨境电商的销售热品日报前后端项目，springboot+vue3
+适用于跨境电商选品与趋势分析的 Spring Boot 3 + Vue 3 项目。真实公开数据进入 MySQL 后，由统一看板、后台和利润模型展示。
 
 ## 功能概览
 
-- 前台选品大屏：市场导航、商品卡片、筛选列表
+- 前台选品驾驶舱：实时搜索趋势、汇率、真实商品图片、多币种利润、卡片/表格筛选
 - 独立后台：`/admin`
 - 后台菜单：用户管理、角色管理、菜单管理、数据源配置、市场配置、品类配置、采集频率配置、日报记录、商品池
 - 后台支持登录、主动注销、会话过期回登录页及登录/注销审计；开发模式可直接进入，但主动注销后仍需重新登录。
+- Google Trends、Frankfurter 和 WooCommerce 公共目录开箱即用；Yahoo Japan、Rakuten、Rainforest 配凭证即接入
+- 前后台统一 Apple 风格设计系统，支持浅色/深色主题和移动端抽屉；弹窗始终限制在视口内滚动
 - 默认管理员：`admin / admin`
-- 后端支持动态调度与报表配置
+- 后端支持动态调度、幂等日报、多币种换算、AI 标题标准化和采集运行审计
 
 ## 目录说明
 
@@ -38,6 +40,16 @@ port=3306
 database=crossborder_trend_demo
 user=root
 password=
+
+[deepseek.api]
+api_key=your_key
+
+[rakuten.api]
+application_id=your_application_id
+access_key=your_access_key
+
+[yahoo.shopping]
+client_id=your_client_id
 ```
 
 `.env` 只放非敏感开关，例如：
@@ -133,6 +145,8 @@ chmod +x scripts/*.sh
 
 - `GET /api/health`
 - `GET /api/datasources`
+- `GET /api/trend-signals?region=JP&limit=20`
+- `GET /api/exchange-rates/latest?base=JPY&quote=CNY`
 - `GET /api/reports/latest`
 - `GET /api/report?date=2026-07-07`
 - `POST /api/collect/run`
@@ -147,6 +161,9 @@ chmod +x scripts/*.sh
 - `GET /api/admin/schedules`
 - `GET /api/admin/settings`
 - `PUT /api/admin/settings`
+- `GET /api/admin/collection-runs`
+- `POST /api/admin/data-sources/{sourceKey}/test`
+- `POST /api/admin/data-sources/{sourceKey}/collect`
 
 ## 数据库迁移与初始化
 
@@ -167,17 +184,34 @@ chmod +x scripts/*.sh
 - `admin_menus`
 - `market_configs`
 - `category_configs`
+- `trend_signals`
+- `exchange_rates`
+- `data_collection_runs`
 
 ## 真实数据源接入
 
-当前可通过环境变量接入外部数据源：
+开箱即用：
+
+- Google Trends RSS：JP / US / SG 搜索趋势
+- Frankfurter：JPY / USD 等币种兑 CNY 的公共参考汇率
+- WooCommerce Store API：公开商品、价格、图片、类目和热销排序
+
+配置凭证后可用：
+
+- `RAINFOREST_API_KEY`
+- `RAKUTEN_APPLICATION_ID` + `RAKUTEN_ACCESS_KEY`
+- `YAHOO_SHOPPING_CLIENT_ID`
+- `DEEPSEEK_API_KEY`（可选智能标准化）
+
+预留扩展位：
 
 - `APIFY_TOKEN`
-- `RAINFOREST_API_KEY`
 - `KEEPA_API_KEY`
 - `SERPAPI_KEY`
 - `TIKTOK_RESEARCH_TOKEN`
 - `TIKTOK_SHOP_API_KEY`
+
+完整的账号材料、逐步操作、接口验证和 MySQL 验证 SQL：[`docs/cross-border-data-source-integration-guide.md`](docs/cross-border-data-source-integration-guide.md)。统一 UI 规范：[`docs/design-system.md`](docs/design-system.md)。
 
 ## 说明
 

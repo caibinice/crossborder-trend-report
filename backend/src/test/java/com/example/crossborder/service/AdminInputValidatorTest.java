@@ -16,7 +16,7 @@ class AdminInputValidatorTest {
     void rejectsInvalidCronBeforeItCanBreakTheScheduler() {
         AdminSettings invalid = new AdminSettings(
             List.of("Amazon/Rainforest"), List.of("1688"), List.of("玩具"), List.of("日本"),
-            "not-a-cron", 20, new BigDecimal("0.048"), new BigDecimal("18"), true
+            "external", "not-a-cron", 20, new BigDecimal("0.048"), true, new BigDecimal("18"), true
         );
 
         assertThrows(ApiValidationException.class, () -> validator.validateSettings(invalid));
@@ -26,7 +26,7 @@ class AdminInputValidatorTest {
     void validatesAUsableSettingsAndNewUserPassword() {
         AdminSettings valid = new AdminSettings(
             List.of("Amazon/Rainforest"), List.of("1688"), List.of("玩具"), List.of("日本"),
-            "0 30 8 * * *", 20, new BigDecimal("0.048"), new BigDecimal("18"), true
+            "external", "0 30 8 * * *", 20, new BigDecimal("0.048"), true, new BigDecimal("18"), true
         );
         AdminUser user = new AdminUser(0, "default", "operator_1", "strong-password", "运营", "operator", "enabled", "operator@example.com", "");
 

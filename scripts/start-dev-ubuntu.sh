@@ -34,10 +34,29 @@ ini_get() {
   local section="$2"
   local key="$3"
   python3 - "$file" "$section" "$key" <<'PY'
-import configparser, sys
-cfg = configparser.ConfigParser()
-cfg.read(sys.argv[1], encoding='utf-8')
-print(cfg.get(sys.argv[2], sys.argv[3], fallback=''))
+import sys
+path, wanted_section, wanted_key = sys.argv[1:4]
+section = ''
+raw_value = ''
+with open(path, encoding='utf-8') as stream:
+    for original in stream:
+        line = original.strip()
+        if not line or line.startswith(('#', ';')):
+            continue
+        if line.startswith('[') and line.endswith(']'):
+            section = line[1:-1].strip().lower()
+            continue
+        if section != wanted_section.lower():
+            continue
+        if '=' in line:
+            key, value = line.split('=', 1)
+            if key.strip().lower() == wanted_key.lower():
+                print(value.strip().strip('"\''))
+                raise SystemExit
+        elif not raw_value:
+            raw_value = line
+if wanted_key.lower() in ('token', 'api_key', 'key'):
+    print(raw_value)
 PY
 }
 
@@ -106,6 +125,19 @@ if [[ -f "$CREDENTIALS_FILE" ]]; then
   [[ -n "$remote_database" ]] && set_default MYSQL_DATABASE "$remote_database"
   [[ -n "$remote_user" ]] && set_default MYSQL_USER "$remote_user"
   [[ -n "$remote_password" ]] && set_default MYSQL_PASSWORD "$remote_password"
+
+  deepseek_key="$(ini_get "$CREDENTIALS_FILE" deepseek.api token)"
+  rakuten_app_id="$(ini_get "$CREDENTIALS_FILE" rakuten.api application_id)"
+  rakuten_access_key="$(ini_get "$CREDENTIALS_FILE" rakuten.api access_key)"
+  yahoo_client_id="$(ini_get "$CREDENTIALS_FILE" yahoo.shopping client_id)"
+  rainforest_key="$(ini_get "$CREDENTIALS_FILE" rainforest.api api_key)"
+  apify_token="$(ini_get "$CREDENTIALS_FILE" apify.api token)"
+  [[ -n "$deepseek_key" ]] && set_default DEEPSEEK_API_KEY "$deepseek_key"
+  [[ -n "$rakuten_app_id" ]] && set_default RAKUTEN_APPLICATION_ID "$rakuten_app_id"
+  [[ -n "$rakuten_access_key" ]] && set_default RAKUTEN_ACCESS_KEY "$rakuten_access_key"
+  [[ -n "$yahoo_client_id" ]] && set_default YAHOO_SHOPPING_CLIENT_ID "$yahoo_client_id"
+  [[ -n "$rainforest_key" ]] && set_default RAINFOREST_API_KEY "$rainforest_key"
+  [[ -n "$apify_token" ]] && set_default APIFY_TOKEN "$apify_token"
 fi
 
 if [[ "${DB_TARGET}" == "local" ]]; then
