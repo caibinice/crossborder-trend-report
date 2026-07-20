@@ -76,10 +76,10 @@ public class ExternalDataSourceService {
                 "Amazon 价格历史、BSR、类目和报价历史。",
                 "https://keepa.com/#!api", "当前显示接入位，后续可用于历史曲线增强。",
                 List.of("Keepa 订阅", "API Key"), List.of("KEEPA_API_KEY")),
-            status("deepseek", "DeepSeek 智能标准化", "enrichment", value(aiProperties.model(), "deepseek-chat"), aiConfigured(), false, false,
-                "把外文商品标题标准化为中文选品名、关键词、品类和有依据的推荐理由。",
-                "https://api-docs.deepseek.com/", "仅在后台开启智能模式且配置 Key 时调用；失败会保留原始商品数据。",
-                List.of("DeepSeek API Key"), List.of("AI_ENRICHMENT_ENABLED", "DEEPSEEK_API_KEY")),
+            status("deepseek", "DeepSeek 智能翻译与评分", "enrichment", value(aiProperties.model(), "deepseek-v4-pro"), aiConfigured(), false, false,
+                "把外文商品翻译成中文采购词，并输出可审计的跨境销售潜力评分。",
+                "https://api-docs.deepseek.com/zh-cn/guides/thinking_mode", "默认使用 V4 Pro Thinking high；失败会保留来源数据并使用中文品类兜底搜索。",
+                List.of("DeepSeek API Key"), List.of("AI_ENRICHMENT_ENABLED", "DEEPSEEK_API_KEY", "DEEPSEEK_MODEL", "DEEPSEEK_REASONING_EFFORT")),
             status("tiktok-apify", "TikTok / Apify", "social", value(properties.tiktokMode(), "demo"), has(properties.apifyToken()), false, false,
                 "TikTok 日本热视频与商品趋势采集。",
                 "https://apify.com/clockworks/tiktok-scraper", "已保留配置位，当前日报适配器优先使用可验证商品目录。",
@@ -100,10 +100,14 @@ public class ExternalDataSourceService {
     }
 
     public String postJson(String url, String body, Map<String, String> headers) {
+        return postJson(url, body, headers, Duration.ofSeconds(30));
+    }
+
+    public String postJson(String url, String body, Map<String, String> headers, Duration timeout) {
         Map<String, String> merged = new LinkedHashMap<>(headers);
         merged.putIfAbsent("Content-Type", "application/json");
         merged.putIfAbsent("Accept", "application/json");
-        return request("POST", url, body, merged);
+        return request("POST", url, body, merged, timeout);
     }
 
     public Optional<String> tryGet(String url) {
@@ -180,9 +184,13 @@ public class ExternalDataSourceService {
     public boolean aiConfigured() { return aiProperties.enabled() && has(aiProperties.apiKey()); }
 
     private String request(String method, String url, String body, Map<String, String> headers) {
+        return request(method, url, body, headers, Duration.ofSeconds(30));
+    }
+
+    private String request(String method, String url, String body, Map<String, String> headers, Duration timeout) {
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(url))
-                .timeout(Duration.ofSeconds(30))
+                .timeout(timeout == null ? Duration.ofSeconds(30) : timeout)
                 .header("User-Agent", USER_AGENT);
             headers.forEach(builder::header);
             builder.method(method, body == null

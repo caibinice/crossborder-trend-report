@@ -21,30 +21,33 @@ public class ExternalTrendDataSource implements TrendDataSource {
     private final YahooShoppingTrendSource yahoo;
     private final RainforestTrendSource rainforest;
     private final SmartCandidateEnrichmentService enrichment;
+    private final CandidateRankingService ranking;
 
     public ExternalTrendDataSource(
         WooCommerceTrendSource woocommerce,
         RakutenTrendSource rakuten,
         YahooShoppingTrendSource yahoo,
         RainforestTrendSource rainforest,
-        SmartCandidateEnrichmentService enrichment
+        SmartCandidateEnrichmentService enrichment,
+        CandidateRankingService ranking
     ) {
         this.woocommerce = woocommerce;
         this.rakuten = rakuten;
         this.yahoo = yahoo;
         this.rainforest = rainforest;
         this.enrichment = enrichment;
+        this.ranking = ranking;
     }
 
     @Override
     public List<TrendCandidate> fetch(LocalDate date, AdminSettings settings) {
         List<TrendCandidate> candidates = new ArrayList<>();
-        addSafely(candidates, "WooCommerce", () -> woocommerce.fetch(settings));
-        addSafely(candidates, "Yahoo Shopping", () -> yahoo.fetch(settings));
-        addSafely(candidates, "Rakuten", () -> rakuten.fetch(settings));
-        addSafely(candidates, "Rainforest", () -> rainforest.fetch(settings));
+        if (enabled(settings, "woocommerce", "公开目录")) addSafely(candidates, "WooCommerce", () -> woocommerce.fetch(settings));
+        if (enabled(settings, "yahoo")) addSafely(candidates, "Yahoo Shopping", () -> yahoo.fetch(settings));
+        if (enabled(settings, "rakuten", "乐天")) addSafely(candidates, "Rakuten", () -> rakuten.fetch(settings));
+        if (enabled(settings, "rainforest", "amazon")) addSafely(candidates, "Rainforest", () -> rainforest.fetch(settings));
         List<TrendCandidate> unique = deduplicate(candidates);
-        return enrichment.enrich(unique, settings);
+        return ranking.rank(enrichment.enrich(unique, settings));
     }
 
     public List<TrendCandidate> preview(String sourceKey, AdminSettings settings) {
@@ -74,6 +77,15 @@ public class ExternalTrendDataSource implements TrendDataSource {
             unique.putIfAbsent(key, candidate);
         }
         return List.copyOf(unique.values());
+    }
+
+    private boolean enabled(AdminSettings settings, String... aliases) {
+        if (settings.foreignSources() == null || settings.foreignSources().isEmpty()) return true;
+        String configured = String.join(" ", settings.foreignSources()).toLowerCase(Locale.ROOT);
+        for (String alias : aliases) {
+            if (configured.contains(alias.toLowerCase(Locale.ROOT))) return true;
+        }
+        return false;
     }
 
     private String rootMessage(Throwable throwable) {

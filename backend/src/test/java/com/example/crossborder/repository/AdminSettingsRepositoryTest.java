@@ -31,11 +31,15 @@ class AdminSettingsRepositoryTest {
               tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
               foreign_sources VARCHAR(512) NOT NULL,
               domestic_sources VARCHAR(512) NOT NULL,
+              supplier_sites TEXT,
               categories VARCHAR(1024) NOT NULL,
               regions VARCHAR(512) NOT NULL,
               source_mode VARCHAR(16) NOT NULL,
               frequency_cron VARCHAR(64) NOT NULL,
               max_products INT NOT NULL,
+              max_categories INT NOT NULL DEFAULT 10,
+              products_per_category INT NOT NULL DEFAULT 10,
+              ranking_metric VARCHAR(32) NOT NULL DEFAULT 'sales_volume',
               jpy_cny_rate DECIMAL(10,6) NOT NULL,
               auto_exchange_rate BOOLEAN NOT NULL,
               default_shipping_cny DECIMAL(12,2) NOT NULL,
@@ -69,10 +73,14 @@ class AdminSettingsRepositoryTest {
 
         assertIterableEquals(List.of("WooCommerce公开目录", "Google Trends", "Yahoo Shopping", "Rakuten"), settings.foreignSources());
         assertIterableEquals(List.of("1688", "Taobao", "Pinduoduo"), settings.domesticSources());
-        assertIterableEquals(List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "汽车", "厨房", "文具", "服饰", "健康", "食品"), settings.categories());
+        assertIterableEquals(List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "厨房", "服饰", "食品"), settings.categories());
         assertIterableEquals(List.of("日本"), settings.regions());
         assertEquals("0 30 8 * * *", settings.frequencyCron());
-        assertEquals(30, settings.maxProducts());
+        assertEquals(100, settings.maxProducts());
+        assertEquals(10, settings.maxCategories());
+        assertEquals(10, settings.productsPerCategory());
+        assertEquals("sales_volume", settings.rankingMetric());
+        assertEquals(3, settings.supplierSites().size());
         assertEquals(new BigDecimal("0.048000"), settings.jpyCnyRate());
         assertEquals("external", settings.sourceMode());
         assertEquals(new BigDecimal("18.00"), settings.defaultShippingCny());

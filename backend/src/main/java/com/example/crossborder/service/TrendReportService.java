@@ -102,7 +102,8 @@ public class TrendReportService {
         for (ProductDraft product : draft.products()) {
             repository.addProduct(new TrendProduct(
                 0, reportId, rank++, product.category(), product.productNameJp(), product.productNameCn(), product.keywords(),
-                product.sourcePlatform(), product.sourceUrl(), product.imageUrl(), product.heatScore(), product.sourcePrice(),
+                product.sourcePlatform(), product.sourceUrl(), product.imageUrl(), product.heatScore(),
+                product.salesVolumeScore(), product.salesAmountScore(), product.aiScore(), product.sourcePrice(),
                 product.sourceCurrency(), product.sourcePriceCny(), product.domesticCostCny(), product.shippingCny(),
                 product.estimatedProfitCny(), product.estimatedMargin(), product.reason(), product.domesticLinks()
             ));
@@ -117,12 +118,7 @@ public class TrendReportService {
             case "mixed" -> merge(demoSource.fetch(date), external);
             default -> demoSource.fetch(date);
         };
-        List<String> configuredCategories = settings.categories() == null ? List.of() : settings.categories();
-        List<TrendCandidate> candidates = rawCandidates.stream()
-            .filter(candidate -> configuredCategories.isEmpty() || configuredCategories.contains(candidate.category()))
-            .sorted(Comparator.comparingDouble(TrendCandidate::heatScore).reversed())
-            .limit(Math.max(1, settings.maxProducts()))
-            .toList();
+        List<TrendCandidate> candidates = selectCandidates(rawCandidates, settings);
         if (candidates.isEmpty()) {
             throw new ApiConflictException("数据源返回了商品，但全部被后台品类配置过滤；请调整品类后重试");
         }
@@ -135,7 +131,7 @@ public class TrendReportService {
                 key -> exchangeRates.resolveToCny(key, settings.jpyCnyRate(), settings.autoExchangeRate()));
             BigDecimal sourcePrice = nonNull(candidate.sourcePrice());
             BigDecimal sourceCny = sourcePrice.multiply(rate).setScale(2, RoundingMode.HALF_UP);
-            List<DomesticLink> links = domestic.search(candidate, sourceCny);
+            List<DomesticLink> links = domestic.search(candidate, sourceCny, settings.supplierSites());
             BigDecimal cost = links.stream().map(DomesticLink::priceCny).min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
             BigDecimal platformFee = sourceCny.multiply(value(properties.platformFeeRate()));
             BigDecimal paymentFee = sourceCny.multiply(value(properties.paymentFeeRate()));
@@ -145,7 +141,8 @@ public class TrendReportService {
             );
             products.add(new ProductDraft(
                 candidate.category(), candidate.productNameJp(), candidate.productNameCn(), candidate.keywords(),
-                candidate.sourcePlatform(), candidate.sourceUrl(), candidate.imageUrl(), candidate.heatScore(), sourcePrice,
+                candidate.sourcePlatform(), candidate.sourceUrl(), candidate.imageUrl(), candidate.heatScore(),
+                candidate.salesVolumeScore(), candidate.salesAmountScore(), candidate.aiScore(), sourcePrice,
                 currency, sourceCny, cost, settings.defaultShippingCny(), result.profitCny(), result.margin().doubleValue(),
                 candidate.reason(), links
             ));
@@ -153,8 +150,57 @@ public class TrendReportService {
         long realCount = products.stream().filter(product -> !product.sourcePlatform().toLowerCase(Locale.ROOT).contains("demo")).count();
         String displayMode = products.stream().map(ProductDraft::sourcePlatform).distinct().sorted().reduce((a, b) -> a + " + " + b).orElse(sourceMode);
         String summary = "本次采集 " + products.size() + " 个商品，其中真实目录 " + realCount + " 个、演示 "
-            + (products.size() - realCount) + " 个；来源=" + displayMode + "；币种=" + String.join("/", currencyRates.keySet()) + "。";
+            + (products.size() - realCount) + " 个；来源=" + displayMode + "；按"
+            + ("sales_amount".equals(settings.rankingMetric()) ? "销售额指数" : "销量指数")
+            + "筛选，按综合热度倒序；币种=" + String.join("/", currencyRates.keySet()) + "。";
         return new ReportDraft(displayMode, summary, products);
+    }
+
+    private List<TrendCandidate> selectCandidates(List<TrendCandidate> rawCandidates, AdminSettings settings) {
+        List<String> configured = settings.categories() == null ? List.of() : settings.categories().stream()
+            .limit(Math.max(1, settings.maxCategories())).toList();
+        int perCategory = Math.max(1, settings.productsPerCategory());
+        int totalLimit = Math.min(Math.max(1, settings.maxProducts()), Math.max(1, configured.size()) * perCategory);
+        Comparator<TrendCandidate> comparator = rankingComparator(settings.rankingMetric());
+        List<TrendCandidate> selected = new ArrayList<>();
+        List<String> categories = configured.isEmpty()
+            ? rawCandidates.stream().map(TrendCandidate::category).distinct().limit(Math.max(1, settings.maxCategories())).toList()
+            : configured;
+        for (String category : categories) {
+            List<TrendCandidate> available = rawCandidates.stream()
+                .filter(candidate -> category.equals(candidate.category()))
+                .sorted(comparator)
+                .toList();
+            if (available.isEmpty()) continue;
+            LinkedHashMap<String, List<TrendCandidate>> bySource = new LinkedHashMap<>();
+            for (TrendCandidate candidate : available) {
+                bySource.computeIfAbsent(candidate.sourcePlatform(), ignored -> new ArrayList<>()).add(candidate);
+            }
+            bySource.values().stream()
+                .sorted((left, right) -> comparator.compare(left.get(0), right.get(0)))
+                .map(items -> items.get(0))
+                .limit(perCategory)
+                .forEach(selected::add);
+            if (selected.stream().filter(item -> category.equals(item.category())).count() < perCategory) {
+                available.stream()
+                    .filter(candidate -> !selected.contains(candidate))
+                    .limit(perCategory - selected.stream().filter(item -> category.equals(item.category())).count())
+                    .forEach(selected::add);
+            }
+        }
+        Comparator<TrendCandidate> displayOrder = Comparator.comparingDouble(TrendCandidate::heatScore).reversed()
+            .thenComparing(comparator);
+        return selected.stream().sorted(displayOrder).limit(totalLimit).toList();
+    }
+
+    private Comparator<TrendCandidate> rankingComparator(String metric) {
+        Comparator<TrendCandidate> selectedMetric = "sales_amount".equals(metric)
+            ? Comparator.comparingDouble(TrendCandidate::salesAmountScore)
+            : Comparator.comparingDouble(TrendCandidate::salesVolumeScore);
+        return selectedMetric.reversed()
+            .thenComparing(Comparator.comparingDouble(TrendCandidate::heatScore).reversed())
+            .thenComparing(TrendCandidate::sourcePlatform)
+            .thenComparing(TrendCandidate::productNameJp);
     }
 
     private List<TrendCandidate> requireExternal(List<TrendCandidate> external) {
@@ -218,7 +264,8 @@ public class TrendReportService {
 
     private record ProductDraft(
         String category, String productNameJp, String productNameCn, String keywords, String sourcePlatform,
-        String sourceUrl, String imageUrl, double heatScore, BigDecimal sourcePrice, String sourceCurrency,
+        String sourceUrl, String imageUrl, double heatScore, double salesVolumeScore, double salesAmountScore,
+        double aiScore, BigDecimal sourcePrice, String sourceCurrency,
         BigDecimal sourcePriceCny, BigDecimal domesticCostCny, BigDecimal shippingCny,
         BigDecimal estimatedProfitCny, double estimatedMargin, String reason, List<DomesticLink> domesticLinks
     ) {}

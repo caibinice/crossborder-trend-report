@@ -40,7 +40,7 @@
             <span class="overline"><AppIcon name="bolt" />LIVE COMMERCE INTELLIGENCE</span>
             <h1>{{ currentMarket.name }}<br /><em>商品机会雷达</em></h1>
             <p>融合真实商品目录、搜索趋势、多币种汇率与采购成本，快速判断值得验证的跨境机会。</p>
-            <div class="hero-badges"><span>Google Trends</span><span>WooCommerce Store API</span><span>Frankfurter FX</span></div>
+            <div class="hero-badges"><span>Google Trends</span><span>Rakuten Ichiba</span><span>WooCommerce</span><span>DeepSeek V4 Pro</span></div>
           </div>
           <div class="hero-orbit" aria-hidden="true">
             <div class="orbit-ring ring-one" /><div class="orbit-ring ring-two" />
@@ -60,10 +60,10 @@
           <article class="surface-panel trend-radar-panel">
             <div class="panel-heading"><div><span class="overline">REAL-TIME SIGNALS</span><h2>{{ currentMarket.name }}搜索趋势</h2></div><span class="live-chip"><span class="pulse-dot" />实时源</span></div>
             <div v-if="trendSignals.length" class="trend-list">
-              <a v-for="(signal, index) in trendSignals.slice(0, 8)" :key="signal.id" :href="signal.sourceUrl" target="_blank" rel="noreferrer" class="trend-row">
+              <a v-for="(signal, index) in sortedTrendSignals.slice(0, 8)" :key="signal.id" :href="signal.sourceUrl" target="_blank" rel="noreferrer" class="trend-row" :title="`原始搜索量：${signal.trafficLabel || signal.trafficValue}`">
                 <span class="trend-rank">{{ String(index + 1).padStart(2, '0') }}</span>
-                <div><b>{{ signal.keyword }}</b><span><i :style="{ width: `${trendWidth(signal)}%` }" /></span></div>
-                <strong>{{ signal.trafficLabel || signal.trafficValue }}</strong>
+                <div><b>{{ signal.keyword }}</b><span><i :style="{ width: `${trendHeat(signal, index)}%` }" /></span></div>
+                <strong>热度 {{ trendHeat(signal, index) }}</strong>
               </a>
             </div>
             <div v-else class="compact-empty"><AppIcon name="activity" /><div><b>还没有实时趋势</b><p>进入后台数据源配置，点击 Google Trends 的“立即同步”。</p></div></div>
@@ -90,18 +90,21 @@
           <template v-else-if="report">
             <section class="catalog-heading">
               <div><span class="overline">OPPORTUNITY CATALOG</span><h2>商品机会池</h2><p>更新时间 {{ formatDateTime(report.createdAt) }} · {{ products.length }} 个候选</p></div>
-              <div class="segmented-control"><button :class="{ active: activeTab === 'card' }" @click="activeTab = 'card'"><AppIcon name="grid" />卡片</button><button :class="{ active: activeTab === 'table' }" @click="activeTab = 'table'"><AppIcon name="table" />列表</button></div>
+              <div class="catalog-controls">
+                <div class="segmented-control ranking-switch"><button :class="{ active: rankingView === 'heat' }" @click="rankingView = 'heat'">综合热度</button><button :class="{ active: rankingView === 'volume' }" @click="rankingView = 'volume'">销量指数</button><button :class="{ active: rankingView === 'amount' }" @click="rankingView = 'amount'">销售额指数</button></div>
+                <div class="segmented-control"><button :class="{ active: activeTab === 'card' }" @click="activeTab = 'card'"><AppIcon name="grid" />卡片</button><button :class="{ active: activeTab === 'table' }" @click="activeTab = 'table'"><AppIcon name="table" />列表</button></div>
+              </div>
             </section>
 
             <nav v-if="activeTab === 'card'" class="category-pills"><button v-for="category in categories" :key="category" :class="{ active: category === quickCategory }" @click="quickCategory = category">{{ category }}<span>{{ categoryCount(category) }}</span></button></nav>
-            <section v-if="activeTab === 'card'" class="product-grid"><ProductCard v-for="product in cardProducts" :key="product.id" :product="product" /></section>
+            <section v-if="activeTab === 'card'" class="product-grid"><ProductCard v-for="(product, index) in cardProducts" :key="product.id" :product="product" :display-rank="index + 1" /></section>
             <template v-else>
               <section class="filter-panel modern-filter">
                 <label class="field search-field"><span>搜索商品</span><div><AppIcon name="search" /><input v-model="filters.keyword" placeholder="商品名、关键词、来源" /></div></label>
                 <label class="field"><span>品类</span><select v-model="filters.category"><option v-for="category in categories" :key="category">{{ category }}</option></select></label>
                 <label class="field"><span>最低热度</span><input v-model="filters.minHeat" type="number" placeholder="不限" /></label>
                 <label class="field"><span>最低利润</span><input v-model="filters.minProfit" type="number" placeholder="不限" /></label>
-                <label class="field"><span>排序方式</span><select v-model="filters.sortBy"><option value="rank">综合排名</option><option value="heat">热度优先</option><option value="profit">利润优先</option><option value="margin">毛利率优先</option><option value="cost">成本优先</option></select></label>
+                <label class="field"><span>排序方式</span><select v-model="filters.sortBy"><option value="rank">综合排名</option><option value="heat">热度优先</option><option value="volume">销量指数</option><option value="amount">销售额指数</option><option value="profit">利润优先</option><option value="margin">毛利率优先</option><option value="cost">成本优先</option></select></label>
                 <button class="secondary-button filter-reset" @click="resetFilters">重置</button>
               </section>
               <div class="result-summary">筛选出 <b>{{ filteredProducts.length }}</b> 个商品机会</div>
@@ -140,6 +143,7 @@ const dataSources = ref([]);
 const trendSignals = ref([]);
 const exchangeRate = ref(null);
 const activeTab = ref('card');
+const rankingView = ref('heat');
 const quickCategory = ref('全部');
 const loading = ref(false);
 const notice = ref('');
@@ -147,13 +151,17 @@ const filters = reactive({ keyword: '', category: '全部', minHeat: '', minProf
 
 const products = computed(() => report.value?.products || []);
 const categories = computed(() => ['全部', ...new Set(products.value.map((item) => item.category))]);
-const cardProducts = computed(() => quickCategory.value === '全部' ? products.value : products.value.filter((item) => item.category === quickCategory.value));
+const rankedProducts = computed(() => products.value.slice().sort((a, b) => {
+  const field = rankingView.value === 'volume' ? 'salesVolumeScore' : rankingView.value === 'amount' ? 'salesAmountScore' : 'heatScore';
+  return Number(b[field] || 0) - Number(a[field] || 0) || Number(b.heatScore || 0) - Number(a.heatScore || 0);
+}));
+const cardProducts = computed(() => quickCategory.value === '全部' ? rankedProducts.value : rankedProducts.value.filter((item) => item.category === quickCategory.value));
 const realProductCount = computed(() => products.value.filter((item) => !isDemoProduct(item)).length);
 const profitableCount = computed(() => products.value.filter((item) => Number(item.estimatedProfitCny || 0) > 0).length);
 const averageHeat = computed(() => products.value.length ? (products.value.reduce((sum, item) => sum + Number(item.heatScore || 0), 0) / products.value.length).toFixed(1) : '-');
 const configuredLiveSources = computed(() => dataSources.value.filter((item) => item.configured).length);
 const primarySources = computed(() => dataSources.value.filter((item) => ['google-trends', 'frankfurter', 'woocommerce', 'yahoo-shopping', 'rakuten'].includes(item.key)).slice(0, 5));
-const maxTraffic = computed(() => Math.max(1, ...trendSignals.value.map((item) => Number(item.trafficValue || 0))));
+const sortedTrendSignals = computed(() => trendSignals.value.slice().sort((a, b) => Number(b.trafficValue || 0) - Number(a.trafficValue || 0)));
 const filteredProducts = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase();
   const minHeat = filters.minHeat === '' ? null : Number(filters.minHeat);
@@ -167,6 +175,8 @@ const filteredProducts = computed(() => {
     return !(maxCost !== null && Number(product.domesticCostCny || 0) > maxCost);
   }).slice().sort((a, b) => {
     if (filters.sortBy === 'heat') return Number(b.heatScore || 0) - Number(a.heatScore || 0);
+    if (filters.sortBy === 'volume') return Number(b.salesVolumeScore || 0) - Number(a.salesVolumeScore || 0);
+    if (filters.sortBy === 'amount') return Number(b.salesAmountScore || 0) - Number(a.salesAmountScore || 0);
     if (filters.sortBy === 'profit') return Number(b.estimatedProfitCny || 0) - Number(a.estimatedProfitCny || 0);
     if (filters.sortBy === 'margin') return Number(b.estimatedMargin || 0) - Number(a.estimatedMargin || 0);
     if (filters.sortBy === 'cost') return Number(a.domesticCostCny || 0) - Number(b.domesticCostCny || 0);
@@ -202,7 +212,13 @@ async function collect() {
     health.value = healthData; reports.value = summaries; exchangeRate.value = rate; quickCategory.value = '全部';
   } catch (error) { notice.value = error.message || '采集商品失败'; } finally { loading.value = false; }
 }
-function trendWidth(signal) { return Math.max(8, Math.round(Number(signal.trafficValue || 0) / maxTraffic.value * 100)); }
+function trendHeat(signal, index = 0) {
+  const values = sortedTrendSignals.value.map((item) => Math.log10(Math.max(0, Number(item.trafficValue || 0)) + 1));
+  if (!values.length) return 1;
+  const max = Math.max(...values); const min = Math.min(...values); const current = Math.log10(Math.max(0, Number(signal.trafficValue || 0)) + 1);
+  if (max === min) return Math.max(1, Math.round(100 - index * 99 / Math.max(1, values.length - 1)));
+  return Math.max(1, Math.min(100, Math.round(1 + (current - min) / (max - min) * 99)));
+}
 function categoryCount(category) { return category === '全部' ? products.value.length : products.value.filter((item) => item.category === category).length; }
 function sourceIcon(type) { return ({ signal: 'activity', rate: 'money', catalog: 'package', history: 'chart' })[type] || 'database'; }
 function resetFilters() { Object.assign(filters, { keyword: '', category: '全部', minHeat: '', minProfit: '', maxCost: '', sortBy: 'rank' }); }

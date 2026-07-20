@@ -1,6 +1,7 @@
 package com.example.crossborder.repository;
 
 import com.example.crossborder.model.AdminSettings;
+import com.example.crossborder.model.SupplierSiteConfig;
 import com.example.crossborder.service.ApiConflictException;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -38,7 +39,11 @@ public class AdminSettingsRepository {
                 rs.getBigDecimal("jpy_cny_rate"),
                 rs.getBoolean("auto_exchange_rate"),
                 rs.getBigDecimal("default_shipping_cny"),
-                rs.getBoolean("smart_mode")
+                rs.getBoolean("smart_mode"),
+                rs.getInt("max_categories"),
+                rs.getInt("products_per_category"),
+                s(rs, "ranking_metric"),
+                supplierSites(s(rs, "supplier_sites"))
             ),
             tenantId
         ).stream().findFirst().orElseThrow(() -> new ApiConflictException("租户尚未完成系统配置初始化"));
@@ -50,16 +55,21 @@ public class AdminSettingsRepository {
 
     public AdminSettings save(String tenantId, AdminSettings s) {
         int updated = jdbc.update("""
-            UPDATE admin_settings SET foreign_sources=?, domestic_sources=?, categories=?, regions=?, source_mode=?, frequency_cron=?,
-              max_products=?, jpy_cny_rate=?, auto_exchange_rate=?, default_shipping_cny=?, smart_mode=? WHERE tenant_id=?
+            UPDATE admin_settings SET foreign_sources=?, domestic_sources=?, supplier_sites=?, categories=?, regions=?, source_mode=?, frequency_cron=?,
+              max_products=?, max_categories=?, products_per_category=?, ranking_metric=?, jpy_cny_rate=?, auto_exchange_rate=?,
+              default_shipping_cny=?, smart_mode=? WHERE tenant_id=?
             """,
             join(s.foreignSources()),
-            join(s.domesticSources()),
+            join(domesticSources(s)),
+            joinSupplierSites(s.supplierSites()),
             join(s.categories()),
             join(s.regions()),
             sourceMode(s.sourceMode()),
             blankDefault(s.frequencyCron(), "0 30 8 * * *"),
-            Math.max(1, s.maxProducts()),
+            Math.min(500, Math.max(s.maxProducts(), safeProductLimit(s))),
+            Math.max(1, s.maxCategories()),
+            Math.max(1, s.productsPerCategory()),
+            rankingMetric(s.rankingMetric()),
             nonNull(s.jpyCnyRate(), "0.048"),
             s.autoExchangeRate(),
             nonNull(s.defaultShippingCny(), "18"),
@@ -83,8 +93,8 @@ public class AdminSettingsRepository {
                   frequency_cron, max_products, jpy_cny_rate, auto_exchange_rate, default_shipping_cny, smart_mode
                 ) VALUES(
                   ?, ?, 'WooCommerce公开目录,Google Trends,Yahoo Shopping,Rakuten', '1688,Taobao,Pinduoduo',
-                  '玩具,家居,美妆,宠物,数码,户外,母婴,汽车,厨房,文具,服饰,健康,食品',
-                  '日本', 'external', '0 30 8 * * *', 30, 0.048, true, 18, true
+                  '玩具,家居,美妆,宠物,数码,户外,母婴,厨房,服饰,食品',
+                  '日本', 'external', '0 30 8 * * *', 100, 0.048, true, 18, true
                 )
                 """,
                 nextId == null ? 1L : nextId,
@@ -117,6 +127,45 @@ public class AdminSettingsRepository {
             case "demo", "mixed" -> value.trim().toLowerCase();
             default -> "external";
         };
+    }
+
+    private String rankingMetric(String value) {
+        return "sales_amount".equals(value) ? "sales_amount" : "sales_volume";
+    }
+
+    private int safeProductLimit(AdminSettings settings) {
+        return Math.max(1, settings.maxCategories()) * Math.max(1, settings.productsPerCategory());
+    }
+
+    private List<String> domesticSources(AdminSettings settings) {
+        if (settings.supplierSites() != null && !settings.supplierSites().isEmpty()) {
+            return settings.supplierSites().stream().map(SupplierSiteConfig::name).toList();
+        }
+        return settings.domesticSources();
+    }
+
+    private List<SupplierSiteConfig> supplierSites(String value) {
+        String configured = value == null || value.isBlank()
+            ? "1688|https://s.1688.com/selloffer/offer_search.htm?keywords={keyword}\n"
+                + "淘宝|https://s.taobao.com/search?q={keyword}\n"
+                + "拼多多|https://mobile.yangkeduo.com/search_result.html?search_key={keyword}"
+            : value;
+        return configured.lines()
+            .map(String::trim)
+            .filter(line -> !line.isBlank() && line.contains("|"))
+            .map(line -> line.split("\\|", 2))
+            .map(parts -> new SupplierSiteConfig(parts[0].trim(), parts[1].trim()))
+            .filter(site -> !site.name().isBlank() && !site.urlTemplate().isBlank())
+            .toList();
+    }
+
+    private String joinSupplierSites(List<SupplierSiteConfig> sites) {
+        if (sites == null) return "";
+        return sites.stream()
+            .filter(site -> site != null && site.name() != null && site.urlTemplate() != null)
+            .map(site -> site.name().trim() + "|" + site.urlTemplate().trim())
+            .filter(line -> !line.equals("|"))
+            .collect(Collectors.joining("\n"));
     }
 
     private String s(ResultSet rs, String column) throws SQLException {

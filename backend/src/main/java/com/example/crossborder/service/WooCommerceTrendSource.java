@@ -26,7 +26,7 @@ public class WooCommerceTrendSource {
     public List<TrendCandidate> fetch(AdminSettings settings) {
         List<String> stores = external.woocommerceStores();
         if (stores.isEmpty()) return List.of();
-        int perStore = Math.min(Math.max(settings.maxProducts(), 10), 50);
+        int perStore = Math.min(Math.max(settings.maxCategories() * settings.productsPerCategory(), 10), 100);
         List<TrendCandidate> candidates = new ArrayList<>();
         for (String store : stores) {
             String body = external.get(external.woocommerceProductsUrl(store, perStore));
@@ -57,6 +57,8 @@ public class WooCommerceTrendSource {
                 long reviewCount = product.path("review_count").asLong(0);
                 double heat = Math.min(100D, Math.max(35D,
                     101D - position * 1.8D + Math.min(reviewCount, 500) / 25D + rating * 1.5D));
+                double volumeSignal = reviewCount > 0 ? Math.log1p(reviewCount) : 1D / position;
+                double amountSignal = volumeSignal * price.doubleValue();
                 String image = firstText(product.path("images"), "src");
                 String description = clean(product.path("short_description").asText(""));
                 String reason = "公开店铺热销排序第 " + position + "；来源类目=" + value(sourceCategory, "未分类")
@@ -64,7 +66,8 @@ public class WooCommerceTrendSource {
                     + (description.isBlank() ? "。" : "；" + abbreviate(description, 70));
                 candidates.add(new TrendCandidate(
                     category, title, title, keyword(title), "WooCommerce / " + host,
-                    product.path("permalink").asText(storeUrl), image, round(heat), price, currency, reason
+                    product.path("permalink").asText(storeUrl), image, round(heat), volumeSignal, amountSignal, 50D,
+                    price, currency, reason
                 ));
             }
             if (candidates.isEmpty()) throw new DataSourceAccessException("WooCommerce 目录没有可用在售商品");

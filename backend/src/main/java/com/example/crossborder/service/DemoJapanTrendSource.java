@@ -35,6 +35,7 @@ public class DemoJapanTrendSource {
   }
   private void add(List<TrendCandidate> items, String cat, String jp, String cn, String kw, double heat, int jpy, String reason) {
     String url = "https://www.tiktok.com/search?q=" + kw.replace(" ", "%20");
-    items.add(new TrendCandidate(cat, jp, cn, kw, "TikTok JP / demo", url, null, heat, BigDecimal.valueOf(jpy), "JPY", reason));
+    items.add(new TrendCandidate(cat, jp, cn, kw, "TikTok JP / demo", url, null, heat, heat,
+      heat * jpy, 50D, BigDecimal.valueOf(jpy), "JPY", reason));
   }
 }

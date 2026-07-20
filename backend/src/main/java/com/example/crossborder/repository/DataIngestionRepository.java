@@ -86,12 +86,12 @@ public class DataIngestionRepository {
         int safeLimit = Math.min(Math.max(limit, 1), 100);
         if (region == null || region.isBlank()) {
             return jdbc.query(
-                "SELECT * FROM trend_signals ORDER BY published_at DESC,traffic_value DESC,id DESC LIMIT ?",
+                "SELECT * FROM trend_signals ORDER BY traffic_value DESC,published_at DESC,id DESC LIMIT ?",
                 this::signal, safeLimit
             );
         }
         return jdbc.query(
-            "SELECT * FROM trend_signals WHERE region=? ORDER BY published_at DESC,traffic_value DESC,id DESC LIMIT ?",
+            "SELECT * FROM trend_signals WHERE region=? ORDER BY traffic_value DESC,published_at DESC,id DESC LIMIT ?",
             this::signal, region.trim().toUpperCase(), safeLimit
         );
     }

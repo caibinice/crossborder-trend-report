@@ -11,6 +11,9 @@ public record TrendCandidate(
     String sourceUrl,
     String imageUrl,
     double heatScore,
+    double salesVolumeScore,
+    double salesAmountScore,
+    double aiScore,
     BigDecimal sourcePrice,
     String sourceCurrency,
     String reason

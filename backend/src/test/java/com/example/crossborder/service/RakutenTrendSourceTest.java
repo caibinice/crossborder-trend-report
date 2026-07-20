@@ -30,7 +30,7 @@ class RakutenTrendSourceTest {
             "rainforest", "", "", "", "app-id", "secret-key", "affiliate-id", "20260701", "", "search-link", ""
         );
         ExternalDataSourceService external = new ExternalDataSourceService(
-            properties, new AiProperties(false, "", "", "")
+            properties, new AiProperties(false, "", "", "", true, "high", 90)
         );
 
         String url = external.rakutenSearchUrl("収納 ボックス", 8).orElseThrow();

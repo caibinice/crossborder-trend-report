@@ -10,7 +10,9 @@ import com.example.crossborder.model.SysConfig;
 import com.example.crossborder.model.SysDictData;
 import com.example.crossborder.model.SysDictType;
 import com.example.crossborder.model.SysTenant;
+import com.example.crossborder.model.SupplierSiteConfig;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.springframework.scheduling.support.CronExpression;
@@ -30,12 +32,16 @@ public class AdminInputValidator {
         } catch (IllegalArgumentException exception) {
             throw new ApiValidationException("采集 Cron 格式不正确，应为 Spring 六段表达式");
         }
-        requireRange(settings.maxProducts(), 1, 100, "每日报表商品数必须在 1 到 100 之间");
+        requireRange(settings.maxProducts(), 1, 500, "每日报表商品数必须在 1 到 500 之间");
+        requireRange(settings.maxCategories(), 1, 20, "采集大分类数必须在 1 到 20 之间");
+        requireRange(settings.productsPerCategory(), 1, 30, "每个分类商品数必须在 1 到 30 之间");
+        require(List.of("sales_volume", "sales_amount").contains(settings.rankingMetric()), "排行维度只能为销量指数或销售额指数");
         requireDecimal(settings.jpyCnyRate(), BigDecimal.ZERO, new BigDecimal("10"), false, "日元汇率必须大于 0 且不超过 10");
         requireDecimal(settings.defaultShippingCny(), BigDecimal.ZERO, new BigDecimal("100000"), true, "默认物流成本不合法");
         requireList(settings.categories(), "至少配置一个品类");
         requireList(settings.regions(), "至少配置一个区域");
         require(List.of("demo", "external", "mixed").contains(settings.sourceMode()), "数据模式只能为 demo、external 或 mixed");
+        validateSupplierSites(settings.supplierSites());
     }
 
     public void validateUser(AdminUser user, boolean creating) {
@@ -152,6 +158,24 @@ public class AdminInputValidator {
 
     private void validateStatus(String status) {
         require("enabled".equals(status) || "disabled".equals(status), "状态只能为 enabled 或 disabled");
+    }
+
+    private void validateSupplierSites(List<SupplierSiteConfig> sites) {
+        require(sites != null && !sites.isEmpty(), "至少配置一个国内采购搜索站点");
+        requireRange(sites.size(), 1, 20, "国内采购搜索站点不能超过 20 个");
+        for (SupplierSiteConfig site : sites) {
+            require(site != null, "采购站点配置不能为空");
+            requireText(site.name(), "采购站点名称不能为空");
+            requireLength(site.name(), 64, "采购站点名称不能超过 64 个字符");
+            requireText(site.urlTemplate(), "采购站点链接模板不能为空");
+            require(site.urlTemplate().contains("{keyword}"), "采购站点链接模板必须包含 {keyword}");
+            try {
+                URI uri = URI.create(site.urlTemplate().replace("{keyword}", "sample"));
+                require(List.of("http", "https").contains(uri.getScheme()) && uri.getHost() != null, "采购站点链接必须是完整的 HTTP/HTTPS 地址");
+            } catch (IllegalArgumentException exception) {
+                throw new ApiValidationException("采购站点链接模板格式不正确");
+            }
+        }
     }
 
     private void requireList(List<String> values, String message) {

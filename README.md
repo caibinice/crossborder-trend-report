@@ -4,14 +4,14 @@
 
 ## 功能概览
 
-- 前台选品驾驶舱：实时搜索趋势、汇率、真实商品图片、多币种利润、卡片/表格筛选
+- 前台选品驾驶舱：多来源商品聚合、综合热度/销量指数/销售额指数切换、实时搜索趋势、汇率、多币种利润、卡片/表格筛选
 - 独立后台：`/admin`
 - 后台菜单：用户管理、角色管理、菜单管理、数据源配置、市场配置、品类配置、采集频率配置、日报记录、商品池
 - 后台支持登录、主动注销、会话过期回登录页及登录/注销审计；开发模式可直接进入，但主动注销后仍需重新登录。
 - Google Trends、Frankfurter 和 WooCommerce 公共目录开箱即用；Yahoo Japan、Rakuten、Rainforest 配凭证即接入
 - 前后台统一 Apple 风格设计系统，支持浅色/深色主题和移动端抽屉；弹窗始终限制在视口内滚动
 - 默认管理员：`admin / admin`
-- 后端支持动态调度、幂等日报、多币种换算、AI 标题标准化和采集运行审计
+- 后端支持默认 10 个品类 × 每类 10 件的动态配额、来源均衡选取、幂等日报、多币种换算、DeepSeek V4 Pro Thinking high 翻译/评估和采集运行审计
 
 ## 目录说明
 
@@ -52,6 +52,8 @@ affiliate_id=your_affiliate_id
 [yahoo.shopping]
 client_id=your_client_id
 ```
+
+DeepSeek 默认调用 `deepseek-v4-pro`，启用 Thinking 并使用 `reasoning_effort=high`；真实 Token 只放 `credentials.txt`。后台 **选品配置 → 参数配置** 可以修改品类数、每类商品数、销量/销售额筛选口径，以及 `名称|含 {keyword} 的 URL` 格式的 1688、淘宝、拼多多等采购站点。
 
 `.env` 只放非敏感开关，例如：
 
@@ -203,6 +205,8 @@ chmod +x scripts/*.sh
 - `RAKUTEN_APPLICATION_ID` + `RAKUTEN_ACCESS_KEY`
 - `YAHOO_SHOPPING_CLIENT_ID`
 - `DEEPSEEK_API_KEY`（可选智能标准化）
+
+日报中的“销量指数”和“销售额指数”是依据各公开来源提供的评论数、榜单位置、价格等可验证信号归一化得到的 1–100 代理指标，不冒充平台未公开的真实成交量/成交额；“综合热度”再结合 AI 跨境潜力评分计算并统一为 1–100。
 
 预留扩展位：
 

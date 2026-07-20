@@ -22,8 +22,8 @@ public class YahooShoppingTrendSource {
     public List<TrendCandidate> fetch(AdminSettings settings) {
         if (!external.yahooConfigured()) return List.of();
         List<TrendCandidate> candidates = new ArrayList<>();
-        int categoryCount = Math.min(Math.max(settings.categories().size(), 1), 5);
-        int hits = Math.max(3, Math.min(10, settings.maxProducts() / categoryCount + 1));
+        int categoryCount = Math.min(Math.max(settings.categories().size(), 1), Math.max(1, settings.maxCategories()));
+        int hits = Math.max(1, Math.min(50, settings.productsPerCategory()));
         for (String category : settings.categories().stream().limit(categoryCount).toList()) {
             String url = external.yahooShoppingSearchUrl(JapaneseCategoryQueries.forCategory(category), hits).orElseThrow();
             candidates.addAll(parse(external.get(url), category));
@@ -44,10 +44,13 @@ public class YahooShoppingTrendSource {
                 long reviews = item.path("review").path("count").asLong(0);
                 double rating = item.path("review").path("rate").asDouble(0);
                 double heat = Math.min(100, 96 - position + Math.log10(reviews + 1) * 2 + rating);
+                double volumeSignal = reviews > 0 ? Math.log1p(reviews) : 1D / position;
+                double amountSignal = volumeSignal * price.doubleValue();
                 String image = item.path("exImage").path("url").asText(item.path("image").path("medium").asText(null));
                 candidates.add(new TrendCandidate(
                     category, title, title, JapaneseCategoryQueries.forCategory(category), "Yahoo! Japan Shopping",
-                    item.path("url").asText("https://shopping.yahoo.co.jp/"), image, round(heat), price, "JPY",
+                    item.path("url").asText("https://shopping.yahoo.co.jp/"), image, round(heat),
+                    volumeSignal, amountSignal, 50D, price, "JPY",
                     "Yahoo 日本购物评论排序第 " + position + "；评论=" + reviews + "，评分=" + rating + "。"
                 ));
             }

@@ -7,5 +7,8 @@ public record AiProperties(
     boolean enabled,
     String baseUrl,
     String apiKey,
-    String model
+    String model,
+    boolean thinkingEnabled,
+    String reasoningEffort,
+    int timeoutSeconds
 ) {}

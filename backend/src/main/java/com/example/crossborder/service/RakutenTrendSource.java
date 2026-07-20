@@ -26,7 +26,8 @@ public class RakutenTrendSource {
     }
 
     public List<TrendCandidate> fetch(AdminSettings settings) {
-        return fetch(settings, 5, 10);
+        return fetch(settings, Math.max(1, Math.min(settings.maxCategories(), 20)),
+            Math.max(1, Math.min(settings.productsPerCategory(), 30)));
     }
 
     public List<TrendCandidate> preview(AdminSettings settings) {
@@ -40,7 +41,7 @@ public class RakutenTrendSource {
             ? List.of("家居")
             : settings.categories();
         int categoryCount = Math.min(categories.size(), maxCategories);
-        int hits = Math.max(1, Math.min(maxHits, settings.maxProducts() / categoryCount + 1));
+        int hits = Math.max(1, Math.min(maxHits, 30));
         DataSourceAccessException lastFailure = null;
         for (String category : categories.stream().limit(categoryCount).toList()) {
             String url = external.rakutenSearchUrl(JapaneseCategoryQueries.forCategory(category), hits).orElseThrow();
@@ -101,6 +102,8 @@ public class RakutenTrendSource {
                 long reviews = item.path("reviewCount").asLong(0);
                 double rating = item.path("reviewAverage").asDouble(0);
                 double heat = Math.min(100, 95 - position + Math.log10(reviews + 1) * 2 + rating);
+                double volumeSignal = reviews > 0 ? Math.log1p(reviews) : 1D / position;
+                double amountSignal = volumeSignal * price.doubleValue();
                 String shopName = item.path("shopName").asText("").trim();
                 String itemUrl = item.path("affiliateUrl").asText(item.path("itemUrl").asText("https://www.rakuten.co.jp/"));
                 String evidence = "乐天评论热度排序第 " + position + "；评论=" + reviews + "，评分=" + rating
@@ -108,7 +111,7 @@ public class RakutenTrendSource {
                     + (item.path("shipOverseasFlag").asInt(0) == 1 ? "；支持海外配送" : "") + "。";
                 candidates.add(new TrendCandidate(
                     category, title, title, JapaneseCategoryQueries.forCategory(category), "Rakuten Ichiba",
-                    itemUrl, image(item), round(heat), price, "JPY", evidence
+                    itemUrl, image(item), round(heat), volumeSignal, amountSignal, 50D, price, "JPY", evidence
                 ));
             }
             return candidates;

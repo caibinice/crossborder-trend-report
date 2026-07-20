@@ -23,14 +23,18 @@ flowchart LR
   A[Google Trends RSS] --> D[Spring Boot 采集与标准化]
   B[WooCommerce / Yahoo / Rakuten / Rainforest] --> D
   C[Frankfurter FX] --> D
-  D --> E[(云端 MySQL)]
+  D --> I[DeepSeek 翻译与跨境潜力评估]
+  I --> J[来源内归一化与综合排名]
+  J --> E[(云端 MySQL)]
   E --> F[Vue 看板]
   E --> G[管理后台]
   D --> H[多币种换算与利润模型]
   H --> E
 ```
 
-商品采用统一字段：源站、源站链接、原币售价、币种、人民币换算价、图片、热度、品类、国内采购估算、物流、利润和毛利率。日报保存当时的换算结果，历史报表不会因今天汇率变化而被改写。
+商品采用统一字段：源站、源站链接、原币售价、币种、人民币换算价、图片、品类、销量指数、销售额指数、AI 评分、综合热度、国内采购估算、物流、利润和毛利率。日报保存当时的换算结果，历史报表不会因今天汇率变化而被改写。
+
+> 销量指数和销售额指数是把不同来源能公开验证的评论数、榜单位置、价格等信号按“来源 + 品类”归一化成 1–100，并非平台没有公开的真实成交量或成交额。综合热度按销量指数 45%、销售额指数 30%、AI 跨境潜力 25% 合成后再次归一化到 1–100。
 
 ## 3. 第一次启动：照着做即可
 
@@ -123,11 +127,14 @@ Get-Content .\logs\backend.err.log -Tail 100
 1. 打开 `http://127.0.0.1:5174/admin`；
 2. 登录（开发库默认 `admin / admin`）；
 3. 左侧进入 **选品配置 → 数据源配置**；
-4. 对 Google Trends、Frankfurter、WooCommerce 依次点 **测试连接**；
-5. 对 Google Trends、Frankfurter 点 **立即同步**；
-6. 点页面右上角 **采集商品并生成日报**；
-7. 打开前台 `http://127.0.0.1:5174/` 查看趋势、汇率、商品图片和利润；
-8. 后台的 **报表管理 → 日报记录/商品池** 可以查看入库结果。
+4. 对 Google Trends、Frankfurter、WooCommerce、Rakuten 和 DeepSeek 依次点 **测试连接**；没有配置凭证的来源可跳过；
+5. 进入 **选品配置 → 参数配置**，确认默认 10 个品类、最多 10 个品类、每类 10 件；也可以改成自己的数量；
+6. 在同页选择品类内按“销量指数”或“销售额指数”筛选；系统最终仍按综合热度倒序展示；
+7. 按 `名称|URL模板` 每行一个配置采购站点，URL 必须包含 `{keyword}`。默认已经有 1688、淘宝和拼多多；
+8. 对 Google Trends、Frankfurter 点 **立即同步**；
+9. 点页面右上角 **采集商品并生成日报**；
+10. 打开前台 `http://127.0.0.1:5174/`，可切换综合热度、销量指数、销售额指数，并从商品卡片打开中文采购链接；
+11. 后台的 **报表管理 → 日报记录/商品池** 可以查看云端 MySQL 入库结果。
 
 Google Trends 的后台按钮默认同步 JP。需要同步 US/SG 时可以使用下面的 API，定时任务则会自动轮询 `.env` 中全部区域。
 
@@ -250,12 +257,23 @@ WOOCOMMERCE_STORE_URLS=https://shop-a.example.com,https://shop-b.example.com
 
 ## 9. AI 标准化（可选）
 
-配置 DeepSeek 后，系统会批量完成：
+配置 DeepSeek 后，系统默认使用 `deepseek-v4-pro`、Thinking 模式和 `reasoning_effort=high`，批量完成：
 
 - 外文标题转为中文选品名；
-- 在后台允许的品类中归类；
-- 提取中日/英文关键词；
-- 基于来源排名、评论等现有证据生成理由。
+- 提取 2–4 个只含中文、不含日文假名的采购关键词；
+- 基于来源排名、评论等现有证据生成理由；
+- 输出 1–100 的跨境销售潜力评分，参与综合热度计算。
+
+源适配器查询时确定的品类会被锁定，AI 不能把商品挪到其他品类，因此“每个品类 N 件”的配额不会被翻译过程破坏。系统请求 Thinking 模式时不发送 `temperature`。
+
+可选环境参数：
+
+```env
+DEEPSEEK_MODEL=deepseek-v4-pro
+DEEPSEEK_THINKING_ENABLED=true
+DEEPSEEK_REASONING_EFFORT=high
+DEEPSEEK_TIMEOUT_SECONDS=90
+```
 
 它不会生成不存在的销量。调用失败时保留源站标题和规则分类，商品采集仍可完成。关闭方式：
 
@@ -350,5 +368,8 @@ OUTBOUND_HTTP_PROXY=http://127.0.0.1:20808
 - WooCommerce Store Products API：<https://developer.woocommerce.com/docs/apis/store-api/resources-endpoints/products>
 - Yahoo! Shopping Item Search v3：<https://developer.yahoo.co.jp/webapi/shopping/v3/itemsearch.html>
 - Rakuten Ichiba Item Search：<https://webservice.rakuten.co.jp/index.php/documentation/ichiba-item-search>
+- DeepSeek 思考模式：<https://api-docs.deepseek.com/zh-cn/guides/thinking_mode>
+- DeepSeek Chat Completion：<https://api-docs.deepseek.com/api/create-chat-completion>
+- DeepSeek 模型列表：<https://api-docs.deepseek.com/api/list-models>
 - eBay Browse API：<https://developer.ebay.com/api-docs/buy/static/api-browse.html>
 - Best Buy APIs：<https://developer.bestbuy.com/apis>

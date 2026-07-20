@@ -22,7 +22,7 @@ public class RainforestTrendSource {
     public List<TrendCandidate> fetch(AdminSettings settings) {
         if (!external.rainforestConfigured()) return List.of();
         List<TrendCandidate> candidates = new ArrayList<>();
-        for (String category : settings.categories().stream().limit(5).toList()) {
+        for (String category : settings.categories().stream().limit(Math.max(1, settings.maxCategories())).toList()) {
             String url = external.rainforestSearchUrl(JapaneseCategoryQueries.forCategory(category)).orElseThrow();
             candidates.addAll(parse(external.get(url), category));
         }
@@ -40,9 +40,14 @@ public class RainforestTrendSource {
                 if (price.signum() <= 0) continue;
                 double score = Math.max(0, 100 - product.path("position").asDouble(100))
                     + Math.log10(product.path("ratings_total").asDouble(0) + 1) * 2;
+                long ratings = product.path("ratings_total").asLong(0);
+                int position = Math.max(1, product.path("position").asInt(1));
+                double volumeSignal = ratings > 0 ? Math.log1p(ratings) : 1D / position;
+                double amountSignal = volumeSignal * price.doubleValue();
                 candidates.add(new TrendCandidate(
                     category, title, title, JapaneseCategoryQueries.forCategory(category), "Amazon JP / Rainforest",
-                    product.path("link").asText(""), product.path("image").asText(null), Math.min(100, score), price, "JPY",
+                    product.path("link").asText(""), product.path("image").asText(null), Math.min(100, score),
+                    volumeSignal, amountSignal, 50D, price, "JPY",
                     "Amazon 搜索排名=" + product.path("position").asInt(0) + "，评论=" + product.path("ratings_total").asLong(0) + "。"
                 ));
             }
