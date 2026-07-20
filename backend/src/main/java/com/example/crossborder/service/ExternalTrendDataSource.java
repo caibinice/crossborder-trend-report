@@ -51,7 +51,7 @@ public class ExternalTrendDataSource implements TrendDataSource {
         return switch (sourceKey) {
             case "woocommerce" -> woocommerce.fetch(settings);
             case "yahoo-shopping" -> yahoo.fetch(settings);
-            case "rakuten" -> rakuten.fetch(settings);
+            case "rakuten" -> rakuten.preview(settings);
             case "rainforest" -> rainforest.fetch(settings);
             default -> throw new ApiValidationException("该数据源不支持商品连接测试");
         };

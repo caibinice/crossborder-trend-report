@@ -65,8 +65,9 @@ public class ExternalDataSourceService {
                 List.of("Yahoo! JAPAN 开发者账号", "应用 Client ID"), List.of("YAHOO_SHOPPING_CLIENT_ID")),
             status("rakuten", "Rakuten Ichiba", "catalog", "official-api", rakutenConfigured(), false, false,
                 "日本乐天商品、价格、图片、评论和海外配送信息。",
-                "https://webservice.rakuten.co.jp/documentation/ichiba-item-search", "2026 版接口同时需要 Application ID 与 Access Key。",
-                List.of("Rakuten Web Service 应用", "Application ID", "Access Key"), List.of("RAKUTEN_APPLICATION_ID", "RAKUTEN_ACCESS_KEY")),
+                "https://webservice.rakuten.co.jp/index.php/documentation/ichiba-item-search", "2026 版接口同时需要 Application ID 与 Access Key；Affiliate ID 可选。",
+                List.of("Rakuten Web Service 应用", "Application ID", "Access Key", "Affiliate ID（可选）"),
+                List.of("RAKUTEN_APPLICATION_ID", "RAKUTEN_ACCESS_KEY", "RAKUTEN_AFFILIATE_ID（可选）")),
             status("rainforest", "Amazon / Rainforest API", "catalog", value(properties.amazonMode(), "rainforest"), has(properties.rainforestApiKey()), false, false,
                 "Amazon JP 搜索、商品价格、评分、排名和图片。",
                 "https://www.rainforestapi.com/docs/product-data-api/overview", "适合快速获得结构化 Amazon 数据，按服务商套餐计费。",
@@ -130,10 +131,18 @@ public class ExternalDataSourceService {
     public Optional<String> rakutenSearchUrl(String query, int hits) {
         if (!rakutenConfigured()) return Optional.empty();
         String version = value(properties.rakutenApiVersion(), "20260701").replaceAll("[^0-9]", "");
+        String affiliate = has(properties.rakutenAffiliateId())
+            ? "&affiliateId=" + encode(properties.rakutenAffiliateId())
+            : "";
         return Optional.of("https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/" + version
             + "?format=json&formatVersion=2&applicationId=" + encode(properties.rakutenApplicationId())
-            + "&accessKey=" + encode(properties.rakutenAccessKey()) + "&keyword=" + encode(query)
+            + affiliate + "&keyword=" + encode(query)
             + "&hits=" + Math.min(Math.max(hits, 1), 30) + "&sort=" + encode("-reviewCount") + "&imageFlag=1&availability=1");
+    }
+
+    public Map<String, String> rakutenHeaders() {
+        if (!rakutenConfigured()) return Map.of();
+        return Map.of("Accept", "application/json", "accessKey", properties.rakutenAccessKey());
     }
 
     public Optional<String> yahooShoppingSearchUrl(String query, int results) {
@@ -181,7 +190,7 @@ public class ExternalDataSourceService {
                 : HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
             HttpResponse<String> response = http.send(builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new DataSourceAccessException("上游接口返回 HTTP " + response.statusCode());
+                throw new DataSourceAccessException("上游接口返回 HTTP " + response.statusCode(), response.statusCode());
             }
             return response.body();
         } catch (DataSourceAccessException exception) {

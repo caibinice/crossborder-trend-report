@@ -47,6 +47,7 @@ api_key=your_key
 [rakuten.api]
 application_id=your_application_id
 access_key=your_access_key
+affiliate_id=your_affiliate_id
 
 [yahoo.shopping]
 client_id=your_client_id

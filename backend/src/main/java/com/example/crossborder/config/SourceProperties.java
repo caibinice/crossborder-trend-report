@@ -20,6 +20,7 @@ public record SourceProperties(
     String serpapiKey,
     String rakutenApplicationId,
     String rakutenAccessKey,
+    String rakutenAffiliateId,
     String rakutenApiVersion,
     String yahooShoppingClientId,
     String supplierMode,

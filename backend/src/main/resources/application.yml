@@ -57,6 +57,7 @@ app:
     serpapi-key: ${SERPAPI_KEY:}
     rakuten-application-id: ${RAKUTEN_APPLICATION_ID:}
     rakuten-access-key: ${RAKUTEN_ACCESS_KEY:}
+    rakuten-affiliate-id: ${RAKUTEN_AFFILIATE_ID:}
     rakuten-api-version: ${RAKUTEN_API_VERSION:20260701}
     yahoo-shopping-client-id: ${YAHOO_SHOPPING_CLIENT_ID:}
     supplier-mode: ${SUPPLIER_MODE:search-link}

@@ -208,6 +208,7 @@ function Set-CredentialEnv {
 Set-CredentialEnv -Sections @('deepseek.api', 'deepseek') -Keys @('api_key', 'token', 'key') -EnvName 'DEEPSEEK_API_KEY'
 Set-CredentialEnv -Sections @('rakuten.api', 'rakuten') -Keys @('application_id', 'appid') -EnvName 'RAKUTEN_APPLICATION_ID'
 Set-CredentialEnv -Sections @('rakuten.api', 'rakuten') -Keys @('access_key', 'accesskey') -EnvName 'RAKUTEN_ACCESS_KEY'
+Set-CredentialEnv -Sections @('rakuten.api', 'rakuten') -Keys @('affiliate_id', 'affiliateid') -EnvName 'RAKUTEN_AFFILIATE_ID'
 Set-CredentialEnv -Sections @('yahoo.shopping', 'yahoo.api') -Keys @('client_id', 'appid') -EnvName 'YAHOO_SHOPPING_CLIENT_ID'
 Set-CredentialEnv -Sections @('rainforest.api', 'rainforest') -Keys @('api_key', 'key', 'token') -EnvName 'RAINFOREST_API_KEY'
 Set-CredentialEnv -Sections @('apify.api', 'apify') -Keys @('api_token', 'token') -EnvName 'APIFY_TOKEN'

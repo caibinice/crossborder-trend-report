@@ -66,6 +66,7 @@ api_key=你的_DeepSeek_API_Key
 [rakuten.api]
 application_id=你的_Application_ID
 access_key=你的_Access_Key
+affiliate_id=你的_Affiliate_ID（可选）
 
 # 可选：Yahoo 日本购物
 [yahoo.shopping]
@@ -208,16 +209,19 @@ WOOCOMMERCE_STORE_URLS=https://shop-a.example.com,https://shop-b.example.com
 - 应用名称、网站/服务 URL、用途说明；
 - **Application ID**；
 - 2026 版接口要求的 **Access Key**。
+- 可选的 **Affiliate ID**，配置后商品链接优先使用联盟链接。
 
 操作：
 
 1. 注册 Rakuten Web Service 并创建应用；
-2. 在应用详情复制 Application ID 和 Access Key；
+2. 在应用详情复制 Application ID、Access Key，以及可选的 Affiliate ID；
 3. 写入 `credentials.txt` 的 `[rakuten.api]`；
 4. 重启并在后台测试连接；
 5. 测试成功后生成日报。适配器会按评论数排序，读取价格、图片、评论和海外配送信息。
 
-默认接口版本为 `20260701`，需要调整时设置环境变量 `RAKUTEN_API_VERSION`。
+默认接口版本为 `20260701`，Access Key 放在 HTTP 请求头中，避免出现在 URL 和代理访问日志；需要调整版本时设置环境变量 `RAKUTEN_API_VERSION`。
+
+后端会把 Rakuten 请求控制为至少间隔 1.25 秒，遇到 HTTP 429 时按 2 秒、4 秒退避重试；后台“测试连接”只请求一个品类的少量样本，避免一次测试消耗过多配额。`Allowed IP addresses` 应填写后端真实出口公网 IP；若使用 `OUTBOUND_HTTP_PROXY`，需加入代理/VPN 的出口 IP，而不是本机局域网 IP。
 
 ## 8. Amazon 数据：当前推荐与后续正式方案
 
