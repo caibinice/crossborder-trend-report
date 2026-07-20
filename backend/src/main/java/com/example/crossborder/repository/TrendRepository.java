@@ -4,6 +4,7 @@ import com.example.crossborder.model.DomesticLink;
 import com.example.crossborder.model.TrendProduct;
 import com.example.crossborder.model.TrendReport;
 import com.example.crossborder.model.TrendReportSummary;
+import com.example.crossborder.util.SupplierSearchUrlCodec;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -235,7 +236,10 @@ public class TrendRepository {
         String placeholders = String.join(",", Collections.nCopies(productIds.size(), "?"));
         List<DomesticLink> links = jdbc.query(
             "SELECT * FROM domestic_links WHERE product_id IN (" + placeholders + ") AND tenant_id=? ORDER BY price_cny",
-            (rs, rowNum) -> new DomesticLink(rs.getLong("id"), rs.getLong("product_id"), s(rs, "platform"), s(rs, "title"), s(rs, "url"), rs.getBigDecimal("price_cny"), s(rs, "note")),
+            (rs, rowNum) -> SupplierSearchUrlCodec.normalizeHistorical(new DomesticLink(
+                rs.getLong("id"), rs.getLong("product_id"), s(rs, "platform"), s(rs, "title"),
+                s(rs, "url"), rs.getBigDecimal("price_cny"), s(rs, "note")
+            )),
             appendTenant(productIds)
         );
         Map<Long, List<DomesticLink>> grouped = new HashMap<>();

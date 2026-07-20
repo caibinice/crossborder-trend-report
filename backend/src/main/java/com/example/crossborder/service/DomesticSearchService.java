@@ -3,10 +3,9 @@ package com.example.crossborder.service;
 import com.example.crossborder.model.DomesticLink;
 import com.example.crossborder.model.SupplierSiteConfig;
 import com.example.crossborder.model.TrendCandidate;
+import com.example.crossborder.util.SupplierSearchUrlCodec;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -19,17 +18,18 @@ public class DomesticSearchService {
     ) {
         BigDecimal base = estimate(candidate.category(), sourcePriceCny);
         String query = procurementQuery(candidate);
-        String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
         List<SupplierSiteConfig> sites = configuredSites == null || configuredSites.isEmpty()
             ? defaultSites()
             : configuredSites;
         List<DomesticLink> links = new ArrayList<>();
         for (SupplierSiteConfig site : sites) {
+            String encoded = SupplierSearchUrlCodec.encodeKeyword(site, query);
             BigDecimal price = base.multiply(multiplier(site.name())).setScale(2, RoundingMode.HALF_UP);
             links.add(new DomesticLink(
                 0, 0, site.name(), query + " - " + site.name() + "搜索",
                 site.urlTemplate().replace("{keyword}", encoded), price,
-                "使用 UTF-8 中文采购词“" + query + "”跳转搜索；价格为估算，需以平台实时报价为准。"
+                "使用 " + SupplierSearchUrlCodec.encodingLabel(site) + " 中文采购词“" + query
+                    + "”跳转搜索；价格为估算，需以平台实时报价为准。"
             ));
         }
         return List.copyOf(links);

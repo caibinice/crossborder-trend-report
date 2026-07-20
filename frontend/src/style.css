@@ -247,27 +247,37 @@ svg.app-icon { width: 1.15em; height: 1.15em; flex: 0 0 auto; }
   margin-bottom: 18px;
   padding: clamp(28px, 5vw, 68px);
   overflow: hidden;
-  color: #fff;
-  background: #11151f;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 82% 46%, rgba(10, 132, 255, .13), transparent 28%),
+    linear-gradient(135deg, #fff 0%, #f9fbff 54%, #edf6ff 100%);
+  border: 1px solid rgba(10, 132, 255, .12);
   border-radius: 30px;
   box-shadow: var(--shadow-md);
 }
-:root[data-theme="dark"] .hero-panel { color: #f7f9fc; background: #141b27; border: 1px solid var(--line); }
-.hero-panel::before { position: absolute; inset: auto -10% -60% 30%; height: 110%; content: ""; background: radial-gradient(circle, rgba(10,132,255,.29), transparent 64%); pointer-events: none; }
+.hero-panel::before { position: absolute; inset: auto -10% -60% 30%; height: 110%; content: ""; background: radial-gradient(circle, rgba(10,132,255,.18), transparent 64%); pointer-events: none; }
 .hero-copy { position: relative; z-index: 2; max-width: 790px; }
-.hero-copy .overline { color: #74b9ff; }
+.hero-copy .overline { color: var(--primary-strong); }
 .hero-copy h1 { max-width: 760px; margin: 16px 0 17px; font-size: clamp(38px, 5vw, 72px); line-height: 1.02; letter-spacing: -0.052em; }
-.hero-copy h1 em { color: #6bb5ff; font-style: normal; }
-.hero-copy > p { max-width: 650px; margin-bottom: 23px; color: rgba(255,255,255,.68); font-size: clamp(14px, 1.5vw, 17px); line-height: 1.7; }
+.hero-copy h1 em { color: var(--primary); font-style: normal; }
+.hero-copy > p { max-width: 650px; margin-bottom: 23px; color: var(--text-soft); font-size: clamp(14px, 1.5vw, 17px); line-height: 1.7; }
 .hero-badges { display: flex; flex-wrap: wrap; gap: 8px; }
-.hero-badges span { padding: 7px 10px; color: rgba(255,255,255,.76); font-size: 10px; font-weight: 700; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); border-radius: 99px; }
+.hero-badges span { padding: 7px 10px; color: var(--text-soft); font-size: 10px; font-weight: 700; background: rgba(255,255,255,.76); border: 1px solid rgba(10,132,255,.14); border-radius: 99px; box-shadow: 0 4px 14px rgba(10,132,255,.06); }
 .hero-orbit { position: relative; z-index: 1; width: min(290px, 100%); aspect-ratio: 1; justify-self: end; }
-.orbit-ring { position: absolute; inset: 12%; border: 1px solid rgba(255,255,255,.17); border-radius: 50%; }
+.orbit-ring { position: absolute; inset: 12%; border: 1px solid rgba(16,24,40,.16); border-radius: 50%; }
 .ring-two { inset: 27%; border-style: dashed; animation: orbit 28s linear infinite; }
 .orbit-core { position: absolute; inset: 39%; display: grid; place-items: center; color: #fff; background: var(--primary); border-radius: 50%; box-shadow: 0 0 42px rgba(10,132,255,.55); }
 .orbit-core .app-icon { width: 32px; height: 32px; }
-.orbit-node { position: absolute; display: grid; place-items: center; width: 48px; height: 48px; color: rgba(255,255,255,.9); font-size: 11px; font-weight: 800; background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.15); border-radius: 50%; backdrop-filter: blur(8px); }
+.orbit-node { position: absolute; display: grid; place-items: center; width: 48px; height: 48px; color: var(--text-soft); font-size: 11px; font-weight: 800; background: rgba(255,255,255,.86); border: 1px solid rgba(16,24,40,.12); border-radius: 50%; box-shadow: 0 8px 24px rgba(16,24,40,.08); backdrop-filter: blur(8px); }
 .node-a { top: 5%; left: 42%; }.node-b { right: 3%; bottom: 22%; }.node-c { bottom: 9%; left: 12%; }
+:root[data-theme="dark"] .hero-panel { color: #f7f9fc; background: #141b27; border-color: var(--line); }
+:root[data-theme="dark"] .hero-panel::before { background: radial-gradient(circle, rgba(10,132,255,.29), transparent 64%); }
+:root[data-theme="dark"] .hero-copy .overline { color: #74b9ff; }
+:root[data-theme="dark"] .hero-copy h1 em { color: #6bb5ff; }
+:root[data-theme="dark"] .hero-copy > p { color: rgba(255,255,255,.68); }
+:root[data-theme="dark"] .hero-badges span { color: rgba(255,255,255,.76); background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.1); box-shadow: none; }
+:root[data-theme="dark"] .orbit-ring { border-color: rgba(255,255,255,.17); }
+:root[data-theme="dark"] .orbit-node { color: rgba(255,255,255,.9); background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.15); box-shadow: none; }
 @keyframes orbit { to { transform: rotate(360deg); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { animation: spin 1s linear infinite; }
