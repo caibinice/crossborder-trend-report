@@ -383,8 +383,11 @@ svg.app-icon { width: 1.15em; height: 1.15em; flex: 0 0 auto; }
 .metric-strip span, .metric-strip b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .metric-strip span { margin-bottom: 4px; color: var(--muted); font-size: 9px; }
 .metric-strip b { font-size: 12px; }
-.product-links { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 9px; margin-top: 14px; }
-.source-link { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; }
+.product-links { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: center; gap: 9px; margin-top: 14px; }
+.source-link { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 5px; min-width: 0; font-size: 11px; font-weight: 700; line-height: 1.4; }
+.source-link .app-icon { margin-top: .12em; }
+.source-link span { display: -webkit-box; min-width: 0; overflow: hidden; overflow-wrap: anywhere; word-break: break-word; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.source-link:only-child { grid-column: 1 / -1; }
 .supplier-link { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; min-width: 0; padding: 9px 10px; color: var(--text); text-align: left; background: var(--surface-soft); border: 0; border-radius: 11px; }
 .supplier-link:hover { color: var(--text); background: var(--surface-hover); }
 .supplier-link span { overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }

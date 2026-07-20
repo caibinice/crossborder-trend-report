@@ -21,7 +21,7 @@
       </div>
 
       <div class="product-links">
-        <a class="source-link" :href="product.sourceUrl" target="_blank" rel="noreferrer"><AppIcon name="external" />{{ product.sourcePlatform }}</a>
+        <a class="source-link" :href="product.sourceUrl" :title="product.sourcePlatform" target="_blank" rel="noreferrer"><AppIcon name="external" /><span>{{ product.sourcePlatform }}</span></a>
         <button v-if="best" type="button" class="supplier-link" @click="supplierOpen = true"><span>查看 {{ product.domesticLinks?.length || 0 }} 个中文采购渠道</span><b>{{ money(best.priceCny, CNY) }}</b><small>最低估算 · {{ best.platform }}</small></button>
       </div>
     </div>
