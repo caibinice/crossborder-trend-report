@@ -1,4 +1,4 @@
-export const API = import.meta.env.VITE_API_BASE || '/api';
+export const API = import.meta.env?.VITE_API_BASE || '/api';
 export const YEN = '¥';
 export const CNY = '￥';
 
@@ -12,11 +12,11 @@ export class ApiError extends Error {
 }
 
 export async function api(path, options = {}) {
-  const headers = { ...(options.headers || {}) };
-  if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+  const headers = new Headers(options.headers || {});
+  if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   let response;
   try {
-    response = await fetch(`${API}${path}`, { headers, ...options });
+    response = await fetch(`${API}${path}`, { ...options, headers });
   } catch (error) {
     throw new ApiError('网络连接失败，请确认前后端服务已启动', 0, error);
   }
