@@ -2,6 +2,11 @@
 
 适用于跨境电商选品与趋势分析的 Spring Boot 3 + Vue 3 项目。真实公开数据进入 MySQL 后，由统一看板、后台和利润模型展示。
 
+生产环境使用 `/crossBorderTrend/` 子路径和自身 JWT 管理登录。低内存
+发布、回滚与 systemd 参数见
+[`docs/production-deployment.md`](docs/production-deployment.md)；所有
+真实密钥只放在忽略的 `credentials.txt` 或服务器 `shared/app.env`。
+
 ## 功能概览
 
 - 前台选品驾驶舱：多来源商品聚合、综合热度/销量指数/销售额指数切换、实时搜索趋势、汇率、多币种利润、卡片/表格筛选

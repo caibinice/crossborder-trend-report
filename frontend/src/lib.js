@@ -1,4 +1,5 @@
-export const API = import.meta.env?.VITE_API_BASE || '/api';
+const viteEnv = import.meta.env || {};
+export const API = viteEnv.VITE_API_BASE || `${viteEnv.BASE_URL || '/crossBorderTrend/'}api`;
 export const YEN = '¥';
 export const CNY = '￥';
 

@@ -22,7 +22,7 @@ test('keeps authorization and adds JSON content type for request bodies', async 
   });
 
   const headers = new Headers(request.options.headers);
-  assert.equal(request.url, '/api/admin/settings');
+  assert.equal(request.url, '/crossBorderTrend/api/admin/settings');
   assert.equal(headers.get('Authorization'), 'Bearer test-token');
   assert.equal(headers.get('Content-Type'), 'application/json');
 });

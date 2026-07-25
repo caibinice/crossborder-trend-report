@@ -19,7 +19,15 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
 server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${SERVER_PORT:8090}
+  forward-headers-strategy: native
+  tomcat:
+    threads:
+      max: ${TOMCAT_MAX_THREADS:20}
+      min-spare: ${TOMCAT_MIN_SPARE_THREADS:2}
+    max-connections: ${TOMCAT_MAX_CONNECTIONS:40}
+    accept-count: ${TOMCAT_ACCEPT_COUNT:20}
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5174,http://127.0.0.1:5174}

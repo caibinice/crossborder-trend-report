@@ -1,0 +1,28 @@
+[Unit]
+Description=Cross-border Trend Report
+After=network-online.target mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__APP_USER__
+Group=__APP_USER__
+WorkingDirectory=/opt/crossborder-trend-report/current
+EnvironmentFile=/opt/crossborder-trend-report/shared/app.env
+ExecStart=/usr/local/bin/java17 -Xms48m -Xmx128m -Xss256k -XX:+UseSerialGC -XX:MaxMetaspaceSize=64m -XX:MaxDirectMemorySize=16m -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError -jar /opt/crossborder-trend-report/current/app.jar
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+SuccessExitStatus=143
+MemoryHigh=240M
+MemoryMax=300M
+CPUQuota=55%
+TasksMax=80
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/crossborder-trend-report/shared
+
+[Install]
+WantedBy=multi-user.target
