@@ -4,6 +4,18 @@ import vue from '@vitejs/plugin-vue';
 export default defineConfig({
   base: '/crossBorderTrend/',
   plugins: [vue()],
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('vue') || id.includes('@vue')) return 'vendor-vue';
+          return 'vendor-misc';
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/crossBorderTrend/api': {

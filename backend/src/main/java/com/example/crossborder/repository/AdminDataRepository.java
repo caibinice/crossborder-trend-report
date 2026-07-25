@@ -49,6 +49,7 @@ public class AdminDataRepository {
     private final BootstrapProperties bootstrapProperties;
     private final SecurityProperties securityProperties;
     private final TransactionTemplate transactions;
+    private volatile boolean fixedPasswordApplied;
 
     public AdminDataRepository(
         JdbcTemplate jdbc,
@@ -72,10 +73,40 @@ public class AdminDataRepository {
      * recreate data that an administrator intentionally deleted or changed.
      */
     public void ensureSeedData() {
-        if (isBootstrapped()) {
+        if (!isBootstrapped()) {
+            transactions.executeWithoutResult(status -> initializeOnce());
+        }
+        applyFixedAdminPassword();
+    }
+
+    private void applyFixedAdminPassword() {
+        if (fixedPasswordApplied) {
             return;
         }
-        transactions.executeWithoutResult(status -> initializeOnce());
+        String configured = bootstrapProperties.fixedAdminPassword();
+        if (configured == null || configured.isBlank()) {
+            fixedPasswordApplied = true;
+            return;
+        }
+        if (configured.length() < 8 || configured.length() > 72) {
+            throw new IllegalStateException("FIXED_ADMIN_PASSWORD 长度必须在 8 到 72 个字符之间");
+        }
+        synchronized (this) {
+            if (fixedPasswordApplied) {
+                return;
+            }
+            Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM sys_user WHERE username='admin'",
+                Integer.class
+            );
+            if (count != null && count > 0) {
+                jdbc.update(
+                    "UPDATE sys_user SET password=? WHERE username='admin'",
+                    passwords.hash(configured)
+                );
+                fixedPasswordApplied = true;
+            }
+        }
     }
 
     private void initializeOnce() {

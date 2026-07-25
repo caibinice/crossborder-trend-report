@@ -544,6 +544,10 @@ svg.app-icon { width: 1.15em; height: 1.15em; flex: 0 0 auto; }
 .modal-header h3 { margin: 5px 0 0; font-size: 20px; }
 .modal-scroll { min-height: 0; padding: 21px 22px; overflow-y: auto; overscroll-behavior: contain; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 9px; flex: 0 0 auto; padding: 14px 22px; background: var(--surface-soft); border-top: 1px solid var(--line); }
+.action-auth-dialog { width: min(460px, 100%); }
+.action-auth-copy { margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.75; }
+.action-auth-dialog .field { margin: 0; }
+.action-auth-dialog .field input { width: 100%; }
 
 .toast { position: fixed; right: 22px; bottom: 22px; z-index: 120; display: flex; align-items: flex-start; gap: 8px; max-width: min(440px, calc(100vw - 44px)); margin: 0; padding: 12px 14px; font-size: 11px; line-height: 1.5; background: var(--surface-solid); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); }
 .toast.error { color: var(--negative); border-color: color-mix(in srgb, var(--negative) 28%, var(--line)); }

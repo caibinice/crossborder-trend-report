@@ -23,9 +23,14 @@ public class JwtTokenService {
     }
 
     public String issue(String username, String role) {
+        return issue(username, role, expireSeconds);
+    }
+
+    public String issue(String username, String role, long requestedExpireSeconds) {
         long now = Instant.now().getEpochSecond();
+        long ttl = Math.max(60, Math.min(requestedExpireSeconds, expireSeconds));
         String header = encode("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
-        String payload = encode("{\"sub\":\"" + escape(username) + "\",\"role\":\"" + escape(role) + "\",\"iat\":" + now + ",\"exp\":" + (now + expireSeconds) + "}");
+        String payload = encode("{\"sub\":\"" + escape(username) + "\",\"role\":\"" + escape(role) + "\",\"iat\":" + now + ",\"exp\":" + (now + ttl) + "}");
         String signingInput = header + "." + payload;
         return signingInput + "." + sign(signingInput);
     }

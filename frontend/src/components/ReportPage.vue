@@ -117,6 +117,17 @@
       </div>
       <p v-if="notice" class="toast error"><AppIcon name="warning" />{{ notice }}</p>
     </section>
+    <div v-if="actionAuthOpen" class="modal-backdrop" role="presentation" @mousedown.self="closeActionAuth">
+      <form class="modal-dialog action-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="action-auth-title" @submit.prevent="verifyAndCollect">
+        <header class="modal-header"><div><span class="overline">PROTECTED ACTION</span><h3 id="action-auth-title">验证敏感操作</h3></div><button type="button" class="icon-button" aria-label="关闭" @click="closeActionAuth"><AppIcon name="x" /></button></header>
+        <div class="modal-scroll">
+          <p class="action-auth-copy">实时抓取、AI 补全与报告生成会消耗服务器和外部接口资源，请输入操作密码继续。</p>
+          <label class="field"><span>操作密码</span><input v-model="actionPassword" autofocus type="password" autocomplete="current-password" /></label>
+          <p v-if="actionAuthError" class="inline-notice error">{{ actionAuthError }}</p>
+        </div>
+        <footer class="modal-actions"><button type="button" class="secondary-button" :disabled="actionVerifying" @click="closeActionAuth">取消</button><button class="primary-button" :disabled="actionVerifying || !actionPassword"><AppIcon :name="actionVerifying ? 'refresh' : 'shield'" :class="{ spinning: actionVerifying }" />{{ actionVerifying ? '验证中…' : '验证并采集' }}</button></footer>
+      </form>
+    </div>
   </main>
 </template>
 
@@ -147,7 +158,12 @@ const rankingView = ref('heat');
 const quickCategory = ref('全部');
 const loading = ref(false);
 const notice = ref('');
+const actionAuthOpen = ref(false);
+const actionPassword = ref('');
+const actionAuthError = ref('');
+const actionVerifying = ref(false);
 const filters = reactive({ keyword: '', category: '全部', minHeat: '', minProfit: '', maxCost: '', sortBy: 'rank' });
+const ACTION_TOKEN_KEY = 'crossborder-action-token';
 
 const products = computed(() => report.value?.products || []);
 const categories = computed(() => ['全部', ...new Set(products.value.map((item) => item.category))]);
@@ -204,13 +220,45 @@ async function loadReportById(id) {
   if (!id) return; loading.value = true; notice.value = '';
   try { report.value = await api(`/reports/${id}`); quickCategory.value = '全部'; } catch (error) { notice.value = error.message || '加载日报失败'; } finally { loading.value = false; }
 }
+function closeActionAuth() {
+  if (actionVerifying.value) return;
+  actionAuthOpen.value = false;
+  actionPassword.value = '';
+  actionAuthError.value = '';
+}
 async function collect() {
+  const token = sessionStorage.getItem(ACTION_TOKEN_KEY);
+  if (token) {
+    await collectWithAuthorization(`Bearer ${token}`);
+    return;
+  }
+  actionPassword.value = '';
+  actionAuthError.value = '';
+  actionAuthOpen.value = true;
+}
+async function verifyAndCollect() {
+  actionVerifying.value = true; actionAuthError.value = '';
+  try {
+    const verified = await api('/action-auth/verify', { method: 'POST', body: JSON.stringify({ password: actionPassword.value }) });
+    sessionStorage.setItem(ACTION_TOKEN_KEY, verified.token);
+    actionAuthOpen.value = false; actionPassword.value = '';
+    await collectWithAuthorization(`Bearer ${verified.token}`);
+  } catch (error) {
+    actionAuthError.value = error.message || '操作密码验证失败';
+  } finally {
+    actionVerifying.value = false;
+  }
+}
+async function collectWithAuthorization(authorization) {
   loading.value = true; notice.value = '';
   try {
-    report.value = await api('/collect/run', { method: 'POST', body: JSON.stringify({ force: true }) });
+    report.value = await api('/collect/run', { method: 'POST', headers: { Authorization: authorization }, body: JSON.stringify({ force: true }) });
     const [healthData, summaries, rate] = await Promise.all([api('/health'), api('/reports/summaries?limit=30'), optional('/exchange-rates/latest?base=JPY&quote=CNY')]);
     health.value = healthData; reports.value = summaries; exchangeRate.value = rate; quickCategory.value = '全部';
-  } catch (error) { notice.value = error.message || '采集商品失败'; } finally { loading.value = false; }
+  } catch (error) {
+    if (error.status === 401) sessionStorage.removeItem(ACTION_TOKEN_KEY);
+    notice.value = error.message || '采集商品失败';
+  } finally { loading.value = false; }
 }
 function trendHeat(signal, index = 0) {
   const values = sortedTrendSignals.value.map((item) => Math.log10(Math.max(0, Number(item.trafficValue || 0)) + 1));

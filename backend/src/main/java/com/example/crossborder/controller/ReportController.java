@@ -6,6 +6,7 @@ import com.example.crossborder.model.RunCollectRequest;
 import com.example.crossborder.model.TrendReport;
 import com.example.crossborder.model.TrendReportSummary;
 import com.example.crossborder.service.ApiValidationException;
+import com.example.crossborder.service.AdminAuthService;
 import com.example.crossborder.service.ExternalDataSourceService;
 import com.example.crossborder.service.TrendReportService;
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,10 +28,16 @@ import org.springframework.web.server.ResponseStatusException;
 public class ReportController {
     private final TrendReportService reports;
     private final ExternalDataSourceService sources;
+    private final AdminAuthService auth;
 
-    public ReportController(TrendReportService reports, ExternalDataSourceService sources) {
+    public ReportController(
+        TrendReportService reports,
+        ExternalDataSourceService sources,
+        AdminAuthService auth
+    ) {
         this.reports = reports;
         this.sources = sources;
+        this.auth = auth;
     }
 
     @GetMapping("/health")
@@ -75,7 +83,13 @@ public class ReportController {
     }
 
     @PostMapping("/collect/run")
-    public TrendReport run(@RequestBody(required = false) RunCollectRequest request) {
+    public TrendReport run(
+        @RequestHeader(value = "Authorization", required = false) String authorization,
+        @RequestBody(required = false) RunCollectRequest request
+    ) {
+        if (!auth.authorized(authorization)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "此操作需要先验证操作密码");
+        }
         LocalDate date = request == null || request.reportDate() == null ? LocalDate.now() : request.reportDate();
         if (date.isAfter(LocalDate.now().plusDays(1))) {
             throw new ApiValidationException("不能生成超过明天的日报");

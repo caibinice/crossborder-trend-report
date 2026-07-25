@@ -48,6 +48,7 @@ app:
     jwt-expire-minutes: ${JWT_EXPIRE_MINUTES:720}
   bootstrap:
     initial-admin-password: ${INITIAL_ADMIN_PASSWORD:}
+    fixed-admin-password: ${FIXED_ADMIN_PASSWORD:}
   sources:
     google-trends-enabled: ${GOOGLE_TRENDS_ENABLED:true}
     google-trends-regions: ${GOOGLE_TRENDS_REGIONS:JP,US,SG}

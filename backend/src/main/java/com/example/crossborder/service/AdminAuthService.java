@@ -16,6 +16,7 @@ public class AdminAuthService {
     }
 
     public String issue(String username, String role) { return properties.enabled() ? jwt.issue(username, role) : DEV_TOKEN; }
+    public String issueActionToken() { return properties.enabled() ? jwt.issue("admin", "admin", 30 * 60) : DEV_TOKEN; }
     public boolean enabled() { return properties.enabled(); }
     public boolean authorized(String authorization) { return !properties.enabled() || claims(authorization).isPresent(); }
     public Optional<JwtTokenService.Claims> claims(String authorization) {

@@ -14,11 +14,13 @@
 验证后原子更新 `current` 软链接，并只保留最近五版。环境变量从
 `/opt/crossborder-trend-report/shared/app.env` 读取；可从
 `deploy/application-production.env.example` 复制，但真实数据库密码、
-JWT 密钥和 DeepSeek token 不得进入 Git。
+JWT 密钥、统一操作口令和 DeepSeek token 不得进入 Git。
 
 systemd 模板把堆限制为 128MB，并限制 metaspace、direct memory、code
 cache、线程栈、连接池和 Tomcat 线程。服务只监听回环地址；JWT 必须在
-生产环境开启。回滚时把 `current` 指回上一 release，重启服务并检查：
+生产环境开启。`FIXED_ADMIN_PASSWORD` 只保存在 `shared/app.env`，公开
+前台的手动采集先调用 `/api/action-auth/verify`，后台自动调度直接调用
+服务层，不需要网页口令。回滚时把 `current` 指回上一 release，重启服务并检查：
 
 ```bash
 curl -fsS http://127.0.0.1:8090/api/admin/auth/status

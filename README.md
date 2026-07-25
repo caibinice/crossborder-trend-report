@@ -2,7 +2,8 @@
 
 适用于跨境电商选品与趋势分析的 Spring Boot 3 + Vue 3 项目。真实公开数据进入 MySQL 后，由统一看板、后台和利润模型展示。
 
-生产环境使用 `/crossBorderTrend/` 子路径和自身 JWT 管理登录。低内存
+生产环境使用 `/crossBorderTrend/` 子路径；公开驾驶舱免登录，采集操作
+通过后端口令换取 30 分钟 JWT，管理后台继续使用自身 JWT。低内存
 发布、回滚与 systemd 参数见
 [`docs/production-deployment.md`](docs/production-deployment.md)；所有
 真实密钥只放在忽略的 `credentials.txt` 或服务器 `shared/app.env`。
@@ -15,7 +16,8 @@
 - 后台支持登录、主动注销、会话过期回登录页及登录/注销审计；开发模式可直接进入，但主动注销后仍需重新登录。
 - Google Trends、Frankfurter 和 WooCommerce 公共目录开箱即用；Yahoo Japan、Rakuten、Rainforest 配凭证即接入
 - 前后台统一 Apple 风格设计系统，支持浅色/深色主题和移动端抽屉；弹窗始终限制在视口内滚动
-- 默认管理员：`admin / admin`
+- 生产管理员账号为 `admin`，密码仅由忽略的部署环境
+  `FIXED_ADMIN_PASSWORD` 注入，不在仓库中提供默认值。
 - 后端支持默认 10 个品类 × 每类 10 件的动态配额、来源均衡选取、幂等日报、多币种换算、DeepSeek V4 Pro Thinking high 翻译/评估和采集运行审计
 
 ## 目录说明
@@ -178,8 +180,14 @@ chmod +x scripts/*.sh
 - 结构迁移：`backend/src/main/resources/db/migration/`
 - Spring Boot 使用 Flyway；已有数据库首次启动会以版本 `0` 建立基线并执行安全迁移。
 - 启动不再用演示 SQL 覆盖用户、角色、菜单、市场、品类、系统设置或管理员密码；首次**完全空库**只初始化一次，并记录初始化标记，之后不会因访问或重启补回已删除的数据。
-- 启用认证（`AUTH_ENABLED=true`）并首次初始化空库时，必须在 `.env` / 部署环境中设置 8–72 位的 `INITIAL_ADMIN_PASSWORD`。开发模式未设置时会生成随机初始密码，因开发鉴权默认关闭不影响本地调试。
+- 启用认证（`AUTH_ENABLED=true`）并首次初始化空库时，必须设置 8–72 位
+  `INITIAL_ADMIN_PASSWORD`。生产环境还设置 `FIXED_ADMIN_PASSWORD`，
+  服务启动后会校准 `admin` 的 BCrypt 密码，使公开采集验证和后台登录使用
+  同一口令。
 - 新建用户必须设置密码，已有明文密码会在首次成功登录后自动升级为 BCrypt 哈希。
+
+前端生产构建关闭 source map，将 Vue 拆为 `vendor-vue`，只对自有业务
+chunk 做保守混淆。混淆不包含密钥，也不能代替 JWT 鉴权。
 
 主要表：
 
