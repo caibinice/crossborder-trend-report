@@ -7,6 +7,8 @@
 发布、回滚与 systemd 参数见
 [`docs/production-deployment.md`](docs/production-deployment.md)；所有
 真实密钥只放在忽略的 `credentials.txt` 或服务器 `shared/app.env`。
+项目本地 `credentials.txt` 缺失时，启动和统一部署脚本会读取兄弟目录
+`ai-blog/credentials.txt` 中的 `crossborder.*` 命名空间。
 
 ## 功能概览
 
@@ -49,18 +51,25 @@ user=root
 password=
 
 [deepseek.api]
-api_key=your_key
+api-key=your_key
 
 [rakuten.api]
 application_id=your_application_id
 access_key=your_access_key
 affiliate_id=your_affiliate_id
+api_base_url=https://openapi.rakuten.co.jp
 
 [yahoo.shopping]
 client_id=your_client_id
 ```
 
-DeepSeek 默认调用 `deepseek-v4-pro`，启用 Thinking 并使用 `reasoning_effort=high`；真实 Token 只放 `credentials.txt`。后台 **选品配置 → 参数配置** 可以修改品类数、每类商品数、销量/销售额筛选口径，以及 `名称|含 {keyword} 的 URL` 格式的 1688、淘宝、拼多多等采购站点。
+共享文件使用 `[crossborder.mysql.remote]`、
+`[crossborder.deepseek.api]`、`[crossborder.rakuten.api]` 等名称；本地文件
+仍使用上面的无前缀名称。DeepSeek 默认调用 `deepseek-v4-pro`，启用
+Thinking 并使用 `reasoning_effort=high`；真实 Token 只放
+`credentials.txt`。后台 **选品配置 → 参数配置** 可以修改品类数、每类
+商品数、销量/销售额筛选口径，以及 `名称|含 {keyword} 的 URL` 格式的
+1688、淘宝、拼多多等采购站点。
 
 `.env` 只放非敏感开关，例如：
 

@@ -7,7 +7,15 @@ LOG_DIR="$REPO_ROOT/logs"
 STATE_FILE="$LOG_DIR/dev-processes.json"
 ENV_FILE="${1:-$REPO_ROOT/.env}"
 SKIP_INSTALL="${SKIP_INSTALL:-0}"
-CREDENTIALS_FILE="$REPO_ROOT/credentials.txt"
+LOCAL_CREDENTIALS_FILE="$REPO_ROOT/credentials.txt"
+SHARED_CREDENTIALS_FILE="$(cd "$REPO_ROOT/.." && pwd)/ai-blog/credentials.txt"
+if [[ -f "$LOCAL_CREDENTIALS_FILE" ]]; then
+  CREDENTIALS_FILE="$LOCAL_CREDENTIALS_FILE"
+  CREDENTIALS_NAMESPACE=""
+else
+  CREDENTIALS_FILE="$SHARED_CREDENTIALS_FILE"
+  CREDENTIALS_NAMESPACE="crossborder."
+fi
 
 mkdir -p "$LOG_DIR"
 
@@ -58,6 +66,19 @@ with open(path, encoding='utf-8') as stream:
 if wanted_key.lower() in ('token', 'api_key', 'key'):
     print(raw_value)
 PY
+}
+
+ini_get_project() {
+  local section="$1"
+  local key="$2"
+  local value=""
+  if [[ -n "$CREDENTIALS_NAMESPACE" ]]; then
+    value="$(ini_get "$CREDENTIALS_FILE" "${CREDENTIALS_NAMESPACE}${section}" "$key")"
+  fi
+  if [[ -z "$value" ]]; then
+    value="$(ini_get "$CREDENTIALS_FILE" "$section" "$key")"
+  fi
+  printf '%s' "$value"
 }
 
 set_default() {
@@ -115,28 +136,32 @@ if [[ "${DB_TARGET}" == "local" ]]; then
 fi
 
 if [[ -f "$CREDENTIALS_FILE" ]]; then
-  remote_host="$(ini_get "$CREDENTIALS_FILE" "$DB_SECTION" host)"
-  remote_port="$(ini_get "$CREDENTIALS_FILE" "$DB_SECTION" port)"
-  remote_database="$(ini_get "$CREDENTIALS_FILE" "$DB_SECTION" database)"
-  remote_user="$(ini_get "$CREDENTIALS_FILE" "$DB_SECTION" user)"
-  remote_password="$(ini_get "$CREDENTIALS_FILE" "$DB_SECTION" password)"
+  remote_host="$(ini_get_project "$DB_SECTION" host)"
+  remote_port="$(ini_get_project "$DB_SECTION" port)"
+  remote_database="$(ini_get_project "$DB_SECTION" database)"
+  remote_user="$(ini_get_project "$DB_SECTION" user)"
+  remote_password="$(ini_get_project "$DB_SECTION" password)"
   [[ -n "$remote_host" ]] && set_default MYSQL_HOST "$remote_host"
   [[ -n "$remote_port" ]] && set_default MYSQL_PORT "$remote_port"
   [[ -n "$remote_database" ]] && set_default MYSQL_DATABASE "$remote_database"
   [[ -n "$remote_user" ]] && set_default MYSQL_USER "$remote_user"
   [[ -n "$remote_password" ]] && set_default MYSQL_PASSWORD "$remote_password"
 
-  deepseek_key="$(ini_get "$CREDENTIALS_FILE" deepseek.api token)"
-  rakuten_app_id="$(ini_get "$CREDENTIALS_FILE" rakuten.api application_id)"
-  rakuten_access_key="$(ini_get "$CREDENTIALS_FILE" rakuten.api access_key)"
-  rakuten_affiliate_id="$(ini_get "$CREDENTIALS_FILE" rakuten.api affiliate_id)"
-  yahoo_client_id="$(ini_get "$CREDENTIALS_FILE" yahoo.shopping client_id)"
-  rainforest_key="$(ini_get "$CREDENTIALS_FILE" rainforest.api api_key)"
-  apify_token="$(ini_get "$CREDENTIALS_FILE" apify.api token)"
+  deepseek_key="$(ini_get_project deepseek.api api-key)"
+  [[ -n "$deepseek_key" ]] || deepseek_key="$(ini_get_project deepseek.api api_key)"
+  [[ -n "$deepseek_key" ]] || deepseek_key="$(ini_get_project deepseek.api token)"
+  rakuten_app_id="$(ini_get_project rakuten.api application_id)"
+  rakuten_access_key="$(ini_get_project rakuten.api access_key)"
+  rakuten_affiliate_id="$(ini_get_project rakuten.api affiliate_id)"
+  rakuten_api_base_url="$(ini_get_project rakuten.api api_base_url)"
+  yahoo_client_id="$(ini_get_project yahoo.shopping client_id)"
+  rainforest_key="$(ini_get_project rainforest.api api_key)"
+  apify_token="$(ini_get_project apify.api token)"
   [[ -n "$deepseek_key" ]] && set_default DEEPSEEK_API_KEY "$deepseek_key"
   [[ -n "$rakuten_app_id" ]] && set_default RAKUTEN_APPLICATION_ID "$rakuten_app_id"
   [[ -n "$rakuten_access_key" ]] && set_default RAKUTEN_ACCESS_KEY "$rakuten_access_key"
   [[ -n "$rakuten_affiliate_id" ]] && set_default RAKUTEN_AFFILIATE_ID "$rakuten_affiliate_id"
+  [[ -n "$rakuten_api_base_url" ]] && set_default RAKUTEN_API_BASE_URL "$rakuten_api_base_url"
   [[ -n "$yahoo_client_id" ]] && set_default YAHOO_SHOPPING_CLIENT_ID "$yahoo_client_id"
   [[ -n "$rainforest_key" ]] && set_default RAINFOREST_API_KEY "$rainforest_key"
   [[ -n "$apify_token" ]] && set_default APIFY_TOKEN "$apify_token"

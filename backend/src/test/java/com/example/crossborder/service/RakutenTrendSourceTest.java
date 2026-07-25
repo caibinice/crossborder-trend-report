@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -18,7 +17,6 @@ import com.example.crossborder.model.TrendCandidate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +25,8 @@ class RakutenTrendSourceTest {
     void keepsAccessKeyInHeaderAndAddsOptionalAffiliateId() {
         SourceProperties properties = new SourceProperties(
             true, "JP", true, true, "https://shop.test", "demo", "", "", "", "",
-            "rainforest", "", "", "", "app-id", "secret-key", "affiliate-id", "20260701", "", "search-link", ""
+            "rainforest", "", "", "", "app-id", "secret-key", "affiliate-id", "20260701",
+            "https://openapi.rakuten.co.jp", "", "search-link", ""
         );
         ExternalDataSourceService external = new ExternalDataSourceService(
             properties, new AiProperties(false, "", "", "", true, "high", 90)
@@ -42,6 +41,22 @@ class RakutenTrendSourceTest {
         assertFalse(url.contains("secret-key"));
         assertFalse(url.contains("accessKey="));
         assertEquals("secret-key", external.rakutenHeaders().get("accessKey"));
+    }
+
+    @Test
+    void acceptsOnlyTheExpectedOfficialCertificateNames() {
+        assertTrue(ExternalDataSourceService.matchesDnsName(
+            "openapi.rakuten.co.jp", "openapi.rakuten.co.jp"
+        ));
+        assertTrue(ExternalDataSourceService.matchesDnsName(
+            "openapi.rakuten.co.jp", "*.rakuten.co.jp"
+        ));
+        assertFalse(ExternalDataSourceService.matchesDnsName(
+            "openapi.rakuten.co.jp", "*.co.jp"
+        ));
+        assertFalse(ExternalDataSourceService.matchesDnsName(
+            "openapi.rakuten.co.jp", "api-gateway-prod.gslb.rdcnw.net"
+        ));
     }
 
     @Test
@@ -83,8 +98,7 @@ class RakutenTrendSourceTest {
         ExternalDataSourceService external = mock(ExternalDataSourceService.class);
         when(external.rakutenConfigured()).thenReturn(true);
         when(external.rakutenSearchUrl(anyString(), anyInt())).thenReturn(Optional.of("https://example.test/search"));
-        when(external.rakutenHeaders()).thenReturn(Map.of("accessKey", "secret"));
-        when(external.get(anyString(), anyMap())).thenReturn("""
+        when(external.getRakuten(anyString())).thenReturn("""
             {"items":[{"itemName":"収納ボックス","itemPrice":1980}]}
             """);
         AdminSettings settings = new AdminSettings(
@@ -96,6 +110,6 @@ class RakutenTrendSourceTest {
         List<TrendCandidate> candidates = new RakutenTrendSource(external, new ObjectMapper()).preview(settings);
 
         assertEquals(1, candidates.size());
-        verify(external, times(1)).get(anyString(), anyMap());
+        verify(external, times(1)).getRakuten(anyString());
     }
 }

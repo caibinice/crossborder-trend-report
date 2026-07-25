@@ -5,13 +5,16 @@ import com.example.crossborder.config.SourceProperties;
 import com.example.crossborder.model.DataSourceStatus;
 import java.net.URI;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,12 +22,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.net.ssl.HttpsURLConnection;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Service
 public class ExternalDataSourceService {
     private static final String USER_AGENT = "CrossborderTrendReport/1.0 (+data-integration)";
+    private static final String RAKUTEN_OFFICIAL_HOST = "openapi.rakuten.co.jp";
+    private static final String RAKUTEN_GATEWAY_HOST = "api-gateway-prod.gslb.rdcnw.net";
+    private static final Set<String> RAKUTEN_ALLOWED_HOSTS = Set.of(
+        RAKUTEN_OFFICIAL_HOST, RAKUTEN_GATEWAY_HOST
+    );
 
     private final SourceProperties properties;
     private final AiProperties aiProperties;
@@ -138,7 +147,7 @@ public class ExternalDataSourceService {
         String affiliate = has(properties.rakutenAffiliateId())
             ? "&affiliateId=" + encode(properties.rakutenAffiliateId())
             : "";
-        return Optional.of("https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/" + version
+        return Optional.of(rakutenBaseUrl() + "/ichibams/api/IchibaItem/Search/" + version
             + "?format=json&formatVersion=2&applicationId=" + encode(properties.rakutenApplicationId())
             + affiliate + "&keyword=" + encode(query)
             + "&hits=" + Math.min(Math.max(hits, 1), 30) + "&sort=" + encode("-reviewCount") + "&imageFlag=1&availability=1");
@@ -147,6 +156,60 @@ public class ExternalDataSourceService {
     public Map<String, String> rakutenHeaders() {
         if (!rakutenConfigured()) return Map.of();
         return Map.of("Accept", "application/json", "accessKey", properties.rakutenAccessKey());
+    }
+
+    public String getRakuten(String url) {
+        if (!rakutenConfigured()) throw new DataSourceAccessException("Rakuten 凭据未配置");
+        HttpsURLConnection connection = null;
+        try {
+            URI uri = URI.create(url);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || !RAKUTEN_ALLOWED_HOSTS.contains(uri.getHost())) {
+                throw new DataSourceAccessException("Rakuten API 地址不在允许列表中");
+            }
+            if (has(properties.outboundProxy())) {
+                URI proxyUri = proxyUri(properties.outboundProxy());
+                Proxy proxy = new Proxy(
+                    Proxy.Type.HTTP,
+                    new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort())
+                );
+                connection = (HttpsURLConnection) uri.toURL().openConnection(proxy);
+            } else {
+                connection = (HttpsURLConnection) uri.toURL().openConnection();
+            }
+            if (RAKUTEN_GATEWAY_HOST.equalsIgnoreCase(uri.getHost())) {
+                connection.setHostnameVerifier(
+                    (ignored, session) -> {
+                        try {
+                            X509Certificate certificate = (X509Certificate) session
+                                .getPeerCertificates()[0];
+                            return certificateAllowsHost(certificate, RAKUTEN_OFFICIAL_HOST);
+                        } catch (RuntimeException | javax.net.ssl.SSLPeerUnverifiedException exception) {
+                            return false;
+                        }
+                    }
+                );
+            }
+            connection.setConnectTimeout(12_000);
+            connection.setReadTimeout(30_000);
+            connection.setInstanceFollowRedirects(true);
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", USER_AGENT);
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("accessKey", properties.rakutenAccessKey());
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) {
+                throw new DataSourceAccessException("上游接口返回 HTTP " + status, status);
+            }
+            try (var stream = connection.getInputStream()) {
+                return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        } catch (DataSourceAccessException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new DataSourceAccessException("访问 Rakuten API 失败：" + exception.getMessage(), exception);
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
     }
 
     public Optional<String> yahooShoppingSearchUrl(String query, int results) {
@@ -225,6 +288,51 @@ public class ExternalDataSourceService {
 
     private boolean wooConfigured() {
         return properties.woocommerceEnabled() && !woocommerceStores().isEmpty();
+    }
+
+    private String rakutenBaseUrl() {
+        String configured = value(
+            properties.rakutenApiBaseUrl(),
+            "https://" + RAKUTEN_OFFICIAL_HOST
+        ).replaceAll("/+$", "");
+        URI uri;
+        try {
+            uri = URI.create(configured);
+        } catch (RuntimeException exception) {
+            throw new DataSourceAccessException("Rakuten API 地址格式不正确", exception);
+        }
+        if (!"https".equalsIgnoreCase(uri.getScheme()) || !RAKUTEN_ALLOWED_HOSTS.contains(uri.getHost())) {
+            throw new DataSourceAccessException("Rakuten API 地址不在允许列表中");
+        }
+        return configured;
+    }
+
+    private boolean certificateAllowsHost(X509Certificate certificate, String expectedHost) {
+        try {
+            Collection<List<?>> names = certificate.getSubjectAlternativeNames();
+            if (names == null) return false;
+            for (List<?> name : names) {
+                if (name.size() >= 2 && Integer.valueOf(2).equals(name.get(0))
+                    && name.get(1) instanceof String dnsName
+                    && matchesDnsName(expectedHost, dnsName)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (java.security.cert.CertificateParsingException exception) {
+            return false;
+        }
+    }
+
+    static boolean matchesDnsName(String expectedHost, String certificateName) {
+        String host = expectedHost == null ? "" : expectedHost.trim().toLowerCase(Locale.ROOT);
+        String pattern = certificateName == null ? "" : certificateName.trim().toLowerCase(Locale.ROOT);
+        if (host.isBlank() || pattern.isBlank()) return false;
+        if (!pattern.startsWith("*.")) return host.equals(pattern);
+        String suffix = pattern.substring(1);
+        if (!host.endsWith(suffix)) return false;
+        String prefix = host.substring(0, host.length() - suffix.length());
+        return !prefix.isBlank() && !prefix.contains(".");
     }
 
     private boolean has(String value) {

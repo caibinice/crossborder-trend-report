@@ -60,7 +60,7 @@ public class RakutenTrendSource {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             awaitRequestSlot();
             try {
-                return external.get(url, external.rakutenHeaders());
+                return external.getRakuten(url);
             } catch (DataSourceAccessException exception) {
                 if (!exception.hasStatus(429) || attempt == MAX_ATTEMPTS) throw exception;
                 sleep(INITIAL_RETRY_DELAY_MILLIS << (attempt - 1));

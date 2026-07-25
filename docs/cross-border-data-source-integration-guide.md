@@ -71,6 +71,7 @@ api_key=你的_DeepSeek_API_Key
 application_id=你的_Application_ID
 access_key=你的_Access_Key
 affiliate_id=你的_Affiliate_ID（可选）
+api_base_url=https://openapi.rakuten.co.jp
 
 # 可选：Yahoo 日本购物
 [yahoo.shopping]
@@ -226,7 +227,13 @@ WOOCOMMERCE_STORE_URLS=https://shop-a.example.com,https://shop-b.example.com
 4. 重启并在后台测试连接；
 5. 测试成功后生成日报。适配器会按评论数排序，读取价格、图片、评论和海外配送信息。
 
-默认接口版本为 `20260701`，Access Key 放在 HTTP 请求头中，避免出现在 URL 和代理访问日志；需要调整版本时设置环境变量 `RAKUTEN_API_VERSION`。
+默认接口版本为 `20260701`，Access Key 放在 HTTP 请求头中，避免出现在
+URL 和代理访问日志；需要调整版本时设置环境变量
+`RAKUTEN_API_VERSION`。若中国大陆服务器对官方域名存在 DNS 污染或 TLS
+阻断，可将 `RAKUTEN_API_BASE_URL` 设置为 Rakuten 官方 DNS 返回的
+`https://api-gateway-prod.gslb.rdcnw.net`。专用客户端仍使用系统 CA
+验证证书链，并额外要求证书匹配 `openapi.rakuten.co.jp`，不会全局关闭
+TLS 校验。
 
 后端会把 Rakuten 请求控制为至少间隔 1.25 秒，遇到 HTTP 429 时按 2 秒、4 秒退避重试；后台“测试连接”只请求一个品类的少量样本，避免一次测试消耗过多配额。`Allowed IP addresses` 应填写后端真实出口公网 IP；若使用 `OUTBOUND_HTTP_PROXY`，需加入代理/VPN 的出口 IP，而不是本机局域网 IP。
 

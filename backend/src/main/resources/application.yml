@@ -68,6 +68,7 @@ app:
     rakuten-access-key: ${RAKUTEN_ACCESS_KEY:}
     rakuten-affiliate-id: ${RAKUTEN_AFFILIATE_ID:}
     rakuten-api-version: ${RAKUTEN_API_VERSION:20260701}
+    rakuten-api-base-url: ${RAKUTEN_API_BASE_URL:https://openapi.rakuten.co.jp}
     yahoo-shopping-client-id: ${YAHOO_SHOPPING_CLIENT_ID:}
     supplier-mode: ${SUPPLIER_MODE:search-link}
     outbound-proxy: ${OUTBOUND_HTTP_PROXY:}

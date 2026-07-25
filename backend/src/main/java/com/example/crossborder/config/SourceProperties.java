@@ -22,6 +22,7 @@ public record SourceProperties(
     String rakutenAccessKey,
     String rakutenAffiliateId,
     String rakutenApiVersion,
+    String rakutenApiBaseUrl,
     String yahooShoppingClientId,
     String supplierMode,
     String outboundProxy

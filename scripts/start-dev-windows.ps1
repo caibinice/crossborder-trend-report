@@ -25,7 +25,14 @@ $backendLog = Join-Path $logsDir 'backend.log'
 $backendErrLog = Join-Path $logsDir 'backend.err.log'
 $frontendLog = Join-Path $logsDir 'frontend.log'
 $frontendErrLog = Join-Path $logsDir 'frontend.err.log'
-$credentialsFile = Join-Path $repoRoot 'credentials.txt'
+$localCredentialsFile = Join-Path $repoRoot 'credentials.txt'
+$sharedCredentialsFile = Join-Path (Split-Path $repoRoot -Parent) 'ai-blog\credentials.txt'
+$credentialsFile = if (Test-Path -LiteralPath $localCredentialsFile) {
+  $localCredentialsFile
+} else {
+  $sharedCredentialsFile
+}
+$credentialSectionPrefix = if ($credentialsFile -eq $localCredentialsFile) { '' } else { 'crossborder.' }
 
 New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 
@@ -176,8 +183,20 @@ if ([string]::IsNullOrWhiteSpace($dbTargetValue)) {
 $dbTarget = $dbTargetValue.Trim().ToLowerInvariant()
 $dbSection = if ($dbTarget -eq 'local') { 'mysql.local' } else { 'mysql.remote' }
 
-if ($credentialMap.ContainsKey($dbSection)) {
-  $dbConfig = $credentialMap[$dbSection]
+function Get-CredentialSection {
+  param([Parameter(Mandatory = $true)][string]$Name)
+
+  foreach ($candidate in @("$credentialSectionPrefix$Name", $Name)) {
+    $normalized = $candidate.ToLowerInvariant()
+    if ($credentialMap.ContainsKey($normalized)) {
+      return $credentialMap[$normalized]
+    }
+  }
+  return $null
+}
+
+$dbConfig = Get-CredentialSection -Name $dbSection
+if ($null -ne $dbConfig) {
   if ($dbConfig.ContainsKey('host')) { Set-DefaultEnv -Name 'MYSQL_HOST' -Value $dbConfig['host'] }
   if ($dbConfig.ContainsKey('port')) { Set-DefaultEnv -Name 'MYSQL_PORT' -Value $dbConfig['port'] }
   if ($dbConfig.ContainsKey('database')) { Set-DefaultEnv -Name 'MYSQL_DATABASE' -Value $dbConfig['database'] }
@@ -193,7 +212,10 @@ function Set-CredentialEnv {
   )
 
   foreach ($sectionName in $Sections) {
-    $normalizedSection = $sectionName.ToLowerInvariant()
+    $normalizedSection = "$credentialSectionPrefix$sectionName".ToLowerInvariant()
+    if (-not $credentialMap.ContainsKey($normalizedSection)) {
+      $normalizedSection = $sectionName.ToLowerInvariant()
+    }
     if (-not $credentialMap.ContainsKey($normalizedSection)) { continue }
     foreach ($keyName in $Keys) {
       $normalizedKey = $keyName.ToLowerInvariant()
@@ -205,10 +227,11 @@ function Set-CredentialEnv {
   }
 }
 
-Set-CredentialEnv -Sections @('deepseek.api', 'deepseek') -Keys @('api_key', 'token', 'key') -EnvName 'DEEPSEEK_API_KEY'
+Set-CredentialEnv -Sections @('deepseek.api', 'deepseek') -Keys @('api-key', 'api_key', 'token', 'key') -EnvName 'DEEPSEEK_API_KEY'
 Set-CredentialEnv -Sections @('rakuten.api', 'rakuten') -Keys @('application_id', 'appid') -EnvName 'RAKUTEN_APPLICATION_ID'
 Set-CredentialEnv -Sections @('rakuten.api', 'rakuten') -Keys @('access_key', 'accesskey') -EnvName 'RAKUTEN_ACCESS_KEY'
 Set-CredentialEnv -Sections @('rakuten.api', 'rakuten') -Keys @('affiliate_id', 'affiliateid') -EnvName 'RAKUTEN_AFFILIATE_ID'
+Set-CredentialEnv -Sections @('rakuten.api', 'rakuten') -Keys @('api_base_url', 'base_url') -EnvName 'RAKUTEN_API_BASE_URL'
 Set-CredentialEnv -Sections @('yahoo.shopping', 'yahoo.api') -Keys @('client_id', 'appid') -EnvName 'YAHOO_SHOPPING_CLIENT_ID'
 Set-CredentialEnv -Sections @('rainforest.api', 'rainforest') -Keys @('api_key', 'key', 'token') -EnvName 'RAINFOREST_API_KEY'
 Set-CredentialEnv -Sections @('apify.api', 'apify') -Keys @('api_token', 'token') -EnvName 'APIFY_TOKEN'
