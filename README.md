@@ -16,7 +16,7 @@
 - 独立后台：`/admin`
 - 后台菜单：用户管理、角色管理、菜单管理、数据源配置、市场配置、品类配置、采集频率配置、日报记录、商品池
 - 后台支持登录、主动注销、会话过期回登录页及登录/注销审计；开发模式可直接进入，但主动注销后仍需重新登录。
-- Google Trends、Frankfurter 和 WooCommerce 公共目录开箱即用；Yahoo Japan、Rakuten、Rainforest 配凭证即接入
+- Google Trends、Frankfurter 和 WooCommerce 公共目录开箱即用；Yahoo Japan（高评价趋势榜 + 商品搜索）、Rakuten、Rainforest 配凭证即接入
 - 前后台统一 Apple 风格设计系统，支持浅色/深色主题和移动端抽屉；弹窗始终限制在视口内滚动
 - 生产管理员账号为 `admin`，密码仅由忽略的部署环境
   `FIXED_ADMIN_PASSWORD` 注入，不在仓库中提供默认值。
@@ -225,7 +225,7 @@ chunk 做保守混淆。混淆不包含密钥，也不能代替 JWT 鉴权。
 
 - `RAINFOREST_API_KEY`
 - `RAKUTEN_APPLICATION_ID` + `RAKUTEN_ACCESS_KEY`
-- `YAHOO_SHOPPING_CLIENT_ID`
+- `YAHOO_SHOPPING_CLIENT_ID`（Yahoo 高评价趋势榜优先，商品搜索 V3 兜底）
 - `DEEPSEEK_API_KEY`（可选智能标准化）
 
 日报中的“销量指数”和“销售额指数”是依据各公开来源提供的评论数、榜单位置、价格等可验证信号归一化得到的 1–100 代理指标，不冒充平台未公开的真实成交量/成交额；“综合热度”再结合 AI 跨境潜力评分计算并统一为 1–100。
@@ -238,7 +238,7 @@ chunk 做保守混淆。混淆不包含密钥，也不能代替 JWT 鉴权。
 - `TIKTOK_RESEARCH_TOKEN`
 - `TIKTOK_SHOP_API_KEY`
 
-完整的账号材料、逐步操作、接口验证和 MySQL 验证 SQL：[`docs/cross-border-data-source-integration-guide.md`](docs/cross-border-data-source-integration-guide.md)。统一 UI 规范：[`docs/design-system.md`](docs/design-system.md)。
+完整的账号材料、逐步操作、接口验证和 MySQL 验证 SQL：[`docs/cross-border-data-source-integration-guide.md`](docs/cross-border-data-source-integration-guide.md)。Yahoo 旧 SDK 审查结论和专项接入步骤：[`docs/yahoo-shopping-integration-assessment.md`](docs/yahoo-shopping-integration-assessment.md)。统一 UI 规范：[`docs/design-system.md`](docs/design-system.md)。
 
 ## 说明
 

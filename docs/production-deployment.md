@@ -14,10 +14,12 @@
 验证后原子更新 `current` 软链接，并只保留最近五版。环境变量从
 `/opt/crossborder-trend-report/shared/app.env` 读取；可从
 `deploy/application-production.env.example` 复制，但真实数据库密码、
-JWT 密钥、统一操作口令、DeepSeek token 和 Rakuten 凭据不得进入 Git。
+JWT 密钥、统一操作口令、DeepSeek token、Rakuten 凭据和 Yahoo Client ID 不得进入 Git。
 统一发布器优先读取项目本地 `credentials.txt`；本地文件不存在时读取
 `ai-blog/credentials.txt` 的 `crossborder.*` 命名空间，并将 Rakuten
 Application ID、Access Key 与 Affiliate ID 注入服务器 `shared/app.env`。
+启用 Yahoo 数据源时，还必须通过发布器或服务器环境文件写入
+`YAHOO_SHOPPING_CLIENT_ID`；仓库只保留空值/占位值。
 阿里云中国大陆出口默认使用 Rakuten 官方 CNAME 网关，绕过被污染的域名
 解析；后端仍校验证书链以及官方 `openapi.rakuten.co.jp` 主机名。
 

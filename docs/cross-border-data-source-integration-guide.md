@@ -9,7 +9,7 @@
 | Google Trends 热门搜索 RSS（JP/US/SG） | 已接入 | 不需要 | `trend_signals`、`data_collection_runs` | 前台“搜索趋势”、后台“数据源配置” |
 | Frankfurter 公共汇率（默认 JPY/CNY） | 已接入 | 不需要 | `exchange_rates`、`data_collection_runs` | 前台汇率指标、后台“数据源配置” |
 | WooCommerce 公开 Store API 商品 | 已接入 | 不需要 | `trend_reports`、`trend_products`、`domestic_links` | 前台商品机会池、后台商品池/日报 |
-| Yahoo! Japan Shopping v3 | 适配器已完成 | Client ID | 同上 | 配好凭证后自动加入真实日报 |
+| Yahoo! Japan 高评价趋势榜 + Shopping v3 | 适配器已完成 | Client ID | 同上 | 配好凭证后自动加入真实日报 |
 | Rakuten Ichiba Item Search 2026 | 适配器已完成 | Application ID + Access Key | 同上 | 配好凭证后自动加入真实日报 |
 | Amazon / Rainforest API | 适配器已完成 | API Key | 同上 | 配好凭证后自动加入真实日报 |
 | DeepSeek 标题标准化 | 已接入、可选 | API Key | 标准化结果随日报商品保存 | 后台开启“AI 智能标准化” |
@@ -188,7 +188,10 @@ WOOCOMMERCE_STORE_URLS=https://shop-a.example.com,https://shop-b.example.com
 
 ## 6. Yahoo! Japan Shopping：准备材料和步骤
 
-官方文档：<https://developer.yahoo.co.jp/webapi/shopping/v3/itemsearch.html>
+官方文档：
+
+- 高评价趋势榜：<https://developer.yahoo.co.jp/webapi/shopping/shopping/v1/highRatingTrendRanking.html>
+- 商品搜索 V3：<https://developer.yahoo.co.jp/webapi/shopping/v3/itemsearch.html>
 
 准备：
 
@@ -203,9 +206,20 @@ WOOCOMMERCE_STORE_URLS=https://shop-a.example.com,https://shop-b.example.com
 3. 复制 Client ID 到 `credentials.txt` 的 `[yahoo.shopping] client_id`；
 4. 重启后在数据源中心看到“已配置”；
 5. 点“测试连接”，成功后生成日报；
-6. 适配器会读取名称、价格、图片、评分、评论数和商品链接，并优先请求可跨境代购、在库、全新商品。
+6. 适配器优先请求“高评价趋势榜”，读取官方排名、名称、价格、图片、评分、评论数和商品链接；
+7. 某个搜索词没有趋势榜结果时，自动回退到商品搜索 V3，并优先请求可跨境代购、在库、全新商品；
+8. 在线连接测试只采一个品类的 3 个样本，完整日报才按后台配置的品类数和每类商品数采集。
 
-不需要店铺授权；这是公开商品检索，不包含你店铺的订单、库存或买家信息。
+不需要店铺授权；这是公开商品检索，不包含你店铺的订单、库存或买家信息。高评价趋势榜的排序会综合“下单人数”和评论评价，但响应不返回具体下单人数、真实销量或销售额，因此页面中的销量/销售额仍是可审计的代理指数，不能当成 Yahoo 后台成交报表。
+
+生产服务器还需要把同一个 Client ID 写入：
+
+```env
+YAHOO_SHOPPING_CLIENT_ID=你的_Client_ID
+```
+
+专项审查、旧 Ruby SDK 不采用的原因以及故障排查见
+[`yahoo-shopping-integration-assessment.md`](yahoo-shopping-integration-assessment.md)。
 
 ## 7. Rakuten Ichiba 2026：准备材料和步骤
 

@@ -69,8 +69,9 @@ public class ExternalDataSourceService {
                 "无需 Key；可把 WOOCOMMERCE_STORE_URLS 换成你的店铺或目标公开店铺。",
                 List.of("WooCommerce 店铺首页 URL（默认已提供）"), List.of("WOOCOMMERCE_ENABLED", "WOOCOMMERCE_STORE_URLS")),
             status("yahoo-shopping", "Yahoo! Japan Shopping", "catalog", "official-api", has(properties.yahooShoppingClientId()), false, false,
-                "日本商品搜索、含税价格、图片、评分与评论数，支持跨境代购筛选。",
-                "https://developer.yahoo.co.jp/webapi/shopping/v3/itemsearch.html", "申请 Client ID 后即可参与真实日报。",
+                "高评价趋势榜（综合下单人数与评论）以及日本商品搜索、含税价格、图片、评分和评论数。",
+                "https://developer.yahoo.co.jp/webapi/shopping/shopping/v1/highRatingTrendRanking.html",
+                "申请 Client ID 后即可参与真实日报；公开接口不返回具体销量或销售额。",
                 List.of("Yahoo! JAPAN 开发者账号", "应用 Client ID"), List.of("YAHOO_SHOPPING_CLIENT_ID")),
             status("rakuten", "Rakuten Ichiba", "catalog", "official-api", rakutenConfigured(), false, false,
                 "日本乐天商品、价格、图片、评论和海外配送信息。",
@@ -218,6 +219,13 @@ public class ExternalDataSourceService {
             + encode(properties.yahooShoppingClientId()) + "&query=" + encode(query) + "&results="
             + Math.min(Math.max(results, 1), 50) + "&sort=" + encode("-review_count")
             + "&in_stock=true&condition=new&is_cross_border_agency=true&image_size=300");
+    }
+
+    public Optional<String> yahooShoppingHighRatingRankingUrl(String query, int limit) {
+        if (!has(properties.yahooShoppingClientId())) return Optional.empty();
+        return Optional.of("https://shopping.yahooapis.jp/ShoppingWebService/V1/highRatingTrendRanking?appid="
+            + encode(properties.yahooShoppingClientId()) + "&query=" + encode(query)
+            + "&offset=1&limit=" + Math.min(Math.max(limit, 1), 100));
     }
 
     public String woocommerceProductsUrl(String baseUrl, int limit) {

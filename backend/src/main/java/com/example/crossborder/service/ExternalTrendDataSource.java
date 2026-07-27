@@ -53,7 +53,7 @@ public class ExternalTrendDataSource implements TrendDataSource {
     public List<TrendCandidate> preview(String sourceKey, AdminSettings settings) {
         return switch (sourceKey) {
             case "woocommerce" -> woocommerce.fetch(settings);
-            case "yahoo-shopping" -> yahoo.fetch(settings);
+            case "yahoo-shopping" -> yahoo.preview(settings);
             case "rakuten" -> rakuten.preview(settings);
             case "rainforest" -> rainforest.fetch(settings);
             default -> throw new ApiValidationException("该数据源不支持商品连接测试");
