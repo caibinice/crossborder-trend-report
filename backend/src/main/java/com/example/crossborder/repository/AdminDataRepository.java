@@ -16,6 +16,7 @@ import com.example.crossborder.model.SysLoginLog;
 import com.example.crossborder.model.SysOperLog;
 import com.example.crossborder.model.SysTenant;
 import com.example.crossborder.service.ApiConflictException;
+import com.example.crossborder.service.MarketCatalog;
 import com.example.crossborder.service.PasswordService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -143,16 +144,24 @@ public class AdminDataRepository {
         jdbc.update("INSERT INTO sys_dict_type(tenant_id,dict_name,dict_type,status,remark) VALUES('default','市场区域','market_region','enabled','跨境市场区域字典')");
         jdbc.update("INSERT INTO sys_dict_data(tenant_id,dict_type,dict_label,dict_value,sort_order,status,remark) VALUES('default','sys_normal_disable','正常','enabled',1,'enabled','')");
         jdbc.update("INSERT INTO sys_dict_data(tenant_id,dict_type,dict_label,dict_value,sort_order,status,remark) VALUES('default','sys_normal_disable','停用','disabled',2,'enabled','')");
-        jdbc.update("INSERT INTO sys_dict_data(tenant_id,dict_type,dict_label,dict_value,sort_order,status,remark) VALUES('default','market_region','日本','jp',1,'enabled','')");
-        jdbc.update("INSERT INTO sys_dict_data(tenant_id,dict_type,dict_label,dict_value,sort_order,status,remark) VALUES('default','market_region','美国','us',2,'enabled','')");
-        jdbc.update("INSERT INTO sys_dict_data(tenant_id,dict_type,dict_label,dict_value,sort_order,status,remark) VALUES('default','market_region','东南亚','sea',3,'enabled','')");
+        jdbc.update("INSERT INTO sys_dict_data(tenant_id,dict_type,dict_label,dict_value,sort_order,status,remark) VALUES('default','market_region','Japan','jp',1,'enabled','')");
+        jdbc.update("INSERT INTO sys_dict_data(tenant_id,dict_type,dict_label,dict_value,sort_order,status,remark) VALUES('default','market_region','United States','us',2,'enabled','')");
+        jdbc.update("INSERT INTO sys_dict_data(tenant_id,dict_type,dict_label,dict_value,sort_order,status,remark) VALUES('default','market_region','Southeast Asia','sea',3,'enabled','')");
         jdbc.update("INSERT INTO sys_config(tenant_id,config_name,config_key,config_value,system_builtin,remark) VALUES('default','系统名称','sys.name','跨境选品系统',true,'')");
-        jdbc.update("INSERT INTO sys_config(tenant_id,config_name,config_key,config_value,system_builtin,remark) VALUES('default','默认语言','sys.lang','zh-CN',true,'')");
-        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','jp','日本市场','日本',true,'已接入演示趋势数据，可继续接 TikTok/Amazon JP')");
-        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','us','美国市场','美国',false,'待接入 Amazon US / TikTok US 数据源')");
-        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','sea','东南亚市场','东南亚',false,'待接入 TikTok Shop SEA / Shopee / Lazada')");
-        for (String category : List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "汽车", "厨房", "文具", "服饰", "健康")) {
-            jdbc.update("INSERT INTO category_configs(tenant_id,category_name,market_key,enabled,keywords,note) VALUES('default',?,'jp',true,?,'日本市场默认品类')", category, category);
+        jdbc.update("INSERT INTO sys_config(tenant_id,config_name,config_key,config_value,system_builtin,remark) VALUES('default','Default language','sys.lang','en',true,'')");
+        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','jp','Japan','Japan',true,'Google Trends and public product catalogs are connected')");
+        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','us','United States','United States',true,'Google Trends and US public product catalogs are connected')");
+        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','sea','Southeast Asia','Southeast Asia',true,'Singapore represents the initial SEA trend and catalog feed')");
+        for (String market : MarketCatalog.keys()) {
+            for (String category : List.of(
+                "Toys", "Home & Living", "Beauty", "Pet Supplies", "Electronics",
+                "Outdoors", "Baby", "Kitchen", "Fashion", "Food"
+            )) {
+                jdbc.update(
+                    "INSERT INTO category_configs(tenant_id,category_name,market_key,enabled,keywords,note) VALUES('default',?,?,true,?,'Default market category')",
+                    category, market, category
+                );
+            }
         }
         settingsRepository.createDefaultIfMissing(DEFAULT_TENANT);
     }

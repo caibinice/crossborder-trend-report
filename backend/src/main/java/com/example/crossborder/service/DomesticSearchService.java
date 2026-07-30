@@ -26,10 +26,10 @@ public class DomesticSearchService {
             String encoded = SupplierSearchUrlCodec.encodeKeyword(site, query);
             BigDecimal price = base.multiply(multiplier(site.name())).setScale(2, RoundingMode.HALF_UP);
             links.add(new DomesticLink(
-                0, 0, site.name(), query + " - " + site.name() + "搜索",
+                0, 0, site.name(), query + " - " + site.name() + " search",
                 site.urlTemplate().replace("{keyword}", encoded), price,
-                "使用 " + SupplierSearchUrlCodec.encodingLabel(site) + " 中文采购词“" + query
-                    + "”跳转搜索；价格为估算，需以平台实时报价为准。"
+                "Searches for \"" + query + "\" using " + SupplierSearchUrlCodec.encodingLabel(site)
+                    + " encoding. Price is an estimate; verify the current supplier quote."
             ));
         }
         return List.copyOf(links);
@@ -37,27 +37,23 @@ public class DomesticSearchService {
 
     String procurementQuery(TrendCandidate candidate) {
         String keywords = clean(candidate.keywords());
-        if (isChinese(keywords)) return abbreviate(keywords, 80);
-        String chineseName = clean(candidate.productNameCn());
-        if (isChinese(chineseName)) return abbreviate(chineseName, 80);
+        if (isEnglish(keywords)) return abbreviate(keywords, 80);
+        String englishName = clean(candidate.productNameCn());
+        if (isEnglish(englishName)) return abbreviate(englishName, 80);
         String category = clean(candidate.category());
-        return category.isBlank() ? "跨境热销商品" : category + " 热销商品";
+        return isEnglish(category) ? category + " trending product" : "Cross-border trending product";
     }
 
     private List<SupplierSiteConfig> defaultSites() {
         return List.of(
             new SupplierSiteConfig("1688", "https://s.1688.com/selloffer/offer_search.htm?keywords={keyword}"),
-            new SupplierSiteConfig("淘宝", "https://s.taobao.com/search?q={keyword}"),
-            new SupplierSiteConfig("拼多多", "https://mobile.yangkeduo.com/search_result.html?search_key={keyword}")
+            new SupplierSiteConfig("Taobao", "https://s.taobao.com/search?q={keyword}"),
+            new SupplierSiteConfig("Pinduoduo", "https://mobile.yangkeduo.com/search_result.html?search_key={keyword}")
         );
     }
 
-    private boolean containsJapaneseKana(String value) {
-        return value.matches(".*[\\p{InHiragana}\\p{InKatakana}].*");
-    }
-
-    private boolean isChinese(String value) {
-        return value != null && !value.isBlank() && !containsJapaneseKana(value) && value.matches(".*[\\p{IsHan}].*");
+    private boolean isEnglish(String value) {
+        return value != null && !value.isBlank() && value.matches(".*[A-Za-z].*");
     }
 
     private String clean(String value) {
@@ -82,14 +78,14 @@ public class DomesticSearchService {
 
     private BigDecimal estimate(String category, BigDecimal sourcePriceCny) {
         double ratio = switch (category == null ? "" : category) {
-            case "玩具" -> 0.30;
-            case "家居" -> 0.34;
-            case "美妆" -> 0.28;
-            case "宠物" -> 0.36;
-            case "数码" -> 0.42;
-            case "户外" -> 0.38;
-            case "母婴" -> 0.33;
-            case "汽车" -> 0.35;
+            case "Toys", "玩具" -> 0.30;
+            case "Home & Living", "家居" -> 0.34;
+            case "Beauty", "美妆" -> 0.28;
+            case "Pet Supplies", "宠物" -> 0.36;
+            case "Electronics", "数码" -> 0.42;
+            case "Outdoors", "户外" -> 0.38;
+            case "Baby", "母婴" -> 0.33;
+            case "Automotive", "汽车" -> 0.35;
             default -> 0.36;
         };
         return sourcePriceCny.multiply(BigDecimal.valueOf(ratio))

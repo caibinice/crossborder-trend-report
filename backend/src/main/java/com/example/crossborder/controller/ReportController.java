@@ -52,21 +52,26 @@ public class ReportController {
 
     /** Kept for compatibility. New screens use the lightweight summaries endpoint. */
     @GetMapping("/reports")
-    public List<TrendReport> reports() {
-        return reports.list();
+    public List<TrendReport> reports(@RequestParam(required = false) String marketKey) {
+        return marketKey == null || marketKey.isBlank() ? reports.list() : reports.list(marketKey);
     }
 
     @GetMapping("/reports/summaries")
-    public List<TrendReportSummary> reportSummaries(@RequestParam(defaultValue = "30") int limit) {
+    public List<TrendReportSummary> reportSummaries(
+        @RequestParam(defaultValue = "30") int limit,
+        @RequestParam(required = false) String marketKey
+    ) {
         if (limit < 1 || limit > 100) {
             throw new ApiValidationException("limit 必须在 1 到 100 之间");
         }
-        return reports.listSummaries(limit);
+        return marketKey == null || marketKey.isBlank()
+            ? reports.listSummaries(limit)
+            : reports.listSummaries(limit, marketKey);
     }
 
     @GetMapping("/reports/latest")
-    public TrendReport latest() {
-        return reports.latest().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "暂无日报，请先手动生成"));
+    public TrendReport latest(@RequestParam(defaultValue = "jp") String marketKey) {
+        return reports.latest(marketKey).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No report is available yet"));
     }
 
     @GetMapping("/reports/{id}")
@@ -78,8 +83,12 @@ public class ReportController {
     }
 
     @GetMapping("/report")
-    public TrendReport byDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return reports.byDate(date).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "该日期暂无日报，请手动生成"));
+    public TrendReport byDate(
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+        @RequestParam(defaultValue = "jp") String marketKey
+    ) {
+        return reports.byDate(date, marketKey)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No report is available for that market and date"));
     }
 
     @PostMapping("/collect/run")
@@ -94,6 +103,7 @@ public class ReportController {
         if (date.isAfter(LocalDate.now().plusDays(1))) {
             throw new ApiValidationException("不能生成超过明天的日报");
         }
-        return reports.collect(date, request != null && Boolean.TRUE.equals(request.force()));
+        String marketKey = request == null ? "jp" : request.marketKey();
+        return reports.collect(date, marketKey, request != null && Boolean.TRUE.equals(request.force()));
     }
 }

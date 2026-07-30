@@ -86,8 +86,8 @@ class YahooShoppingTrendSourceTest {
         assertEquals("JPY", item.sourceCurrency());
         assertEquals("https://store.shopping.yahoo.co.jp/shop/item-1.html", item.sourceUrl());
         assertEquals("https://item-shopping.c.yimg.jp/i/g/shop_item-1", item.imageUrl());
-        assertTrue(item.reason().contains("高评价趋势第 2"));
-        assertTrue(item.reason().contains("不公开具体销量"));
+        assertTrue(item.reason().contains("trend rank #2"));
+        assertTrue(item.reason().contains("without exposing actual sales"));
         assertTrue(item.salesVolumeScore() > 0);
         assertTrue(item.salesAmountScore() > item.salesVolumeScore());
     }
@@ -129,7 +129,7 @@ class YahooShoppingTrendSourceTest {
 
     private SourceProperties sourceProperties(String yahooClientId) {
         return new SourceProperties(
-            true, "JP", true, true, "https://shop.test", "demo", "", "", "", "",
+            true, "JP", true, true, "https://shop.test", "https://us.test", "https://sea.test", "demo", "", "", "", "",
             "rainforest", "", "", "", "", "", "", "20260701",
             "https://openapi.rakuten.co.jp", yahooClientId, "search-link", ""
         );

@@ -55,19 +55,22 @@ public class ExternalDataSourceService {
 
     public List<DataSourceStatus> statuses() {
         return List.of(
-            status("google-trends", "Google Trends 实时趋势", "signal", "RSS", properties.googleTrendsEnabled(), true, true,
-                "日本、美国、东南亚实时搜索趋势信号，直接入库用于趋势雷达。",
-                "https://trends.google.com/trending", "无需账号或 Key；默认同步 JP/US/SG。",
-                List.of("无需材料"), List.of("GOOGLE_TRENDS_ENABLED", "GOOGLE_TRENDS_REGIONS", "OUTBOUND_HTTP_PROXY（可选）")),
-            status("frankfurter", "Frankfurter 公共汇率", "rate", "public-api", properties.frankfurterEnabled(), true, true,
-                "同步 JPY/CNY、USD/CNY 等央行参考汇率，用于多币种利润换算。",
-                "https://frankfurter.dev/", "无需账号或 Key；汇率按日期缓存到 MySQL。",
-                List.of("无需材料"), List.of("FRANKFURTER_ENABLED")),
-            status("woocommerce", "WooCommerce 公共商品目录", "catalog", "store-api", wooConfigured(), true, false,
-                "采集公开店铺的商品、价格、图片、类目和热销排序；默认接入日本商品跨境店。",
+            status("google-trends", "Google Trends live searches", "signal", "RSS", properties.googleTrendsEnabled(), true, true,
+                "Live search signals for Japan, the United States, and Southeast Asia.",
+                "https://trends.google.com/trending", "No account or API key required; JP, US, and SG are enabled by default.",
+                List.of("No credentials required"), List.of("GOOGLE_TRENDS_ENABLED", "GOOGLE_TRENDS_REGIONS", "OUTBOUND_HTTP_PROXY (optional)")),
+            status("frankfurter", "Frankfurter public exchange rates", "rate", "public-api", properties.frankfurterEnabled(), true, true,
+                "Central-bank reference rates such as JPY/CNY, USD/CNY, and SGD/CNY.",
+                "https://frankfurter.dev/", "No account or API key required; rates are cached in MySQL by date.",
+                List.of("No credentials required"), List.of("FRANKFURTER_ENABLED")),
+            status("woocommerce", "WooCommerce public catalogs", "catalog", "store-api", wooConfigured(), true, false,
+                "Public products, prices, images, categories, ratings, and popularity ordering for all three markets.",
                 "https://developer.woocommerce.com/docs/apis/store-api/resources-endpoints/products",
-                "无需 Key；可把 WOOCOMMERCE_STORE_URLS 换成你的店铺或目标公开店铺。",
-                List.of("WooCommerce 店铺首页 URL（默认已提供）"), List.of("WOOCOMMERCE_ENABLED", "WOOCOMMERCE_STORE_URLS")),
+                "No key required. Each market has an independent, replaceable store URL list.",
+                List.of("Public WooCommerce storefront URLs"), List.of(
+                    "WOOCOMMERCE_ENABLED", "WOOCOMMERCE_STORE_URLS",
+                    "WOOCOMMERCE_US_STORE_URLS", "WOOCOMMERCE_SEA_STORE_URLS"
+                )),
             status("yahoo-shopping", "Yahoo! Japan Shopping", "catalog", "official-api", has(properties.yahooShoppingClientId()), false, false,
                 "高评价趋势榜（综合下单人数与评论）以及日本商品搜索、含税价格、图片、评分和评论数。",
                 "https://developer.yahoo.co.jp/webapi/shopping/shopping/v1/highRatingTrendRanking.html",
@@ -86,9 +89,9 @@ public class ExternalDataSourceService {
                 "Amazon 价格历史、BSR、类目和报价历史。",
                 "https://keepa.com/#!api", "当前显示接入位，后续可用于历史曲线增强。",
                 List.of("Keepa 订阅", "API Key"), List.of("KEEPA_API_KEY")),
-            status("deepseek", "DeepSeek 智能翻译与评分", "enrichment", value(aiProperties.model(), "deepseek-v4-pro"), aiConfigured(), false, false,
-                "把外文商品翻译成中文采购词，并输出可审计的跨境销售潜力评分。",
-                "https://api-docs.deepseek.com/zh-cn/guides/thinking_mode", "默认使用 V4 Pro Thinking high；失败会保留来源数据并使用中文品类兜底搜索。",
+            status("deepseek", "DeepSeek normalization and scoring", "enrichment", value(aiProperties.model(), "deepseek-v4-pro"), aiConfigured(), false, false,
+                "Normalizes product data to English and provides an auditable cross-border potential score.",
+                "https://api-docs.deepseek.com/guides/thinking_mode", "Uses V4 Pro Thinking high by default; source data remains available when enrichment fails.",
                 List.of("DeepSeek API Key"), List.of("AI_ENRICHMENT_ENABLED", "DEEPSEEK_API_KEY", "DEEPSEEK_MODEL", "DEEPSEEK_REASONING_EFFORT")),
             status("tiktok-apify", "TikTok / Apify", "social", value(properties.tiktokMode(), "demo"), has(properties.apifyToken()), false, false,
                 "TikTok 日本热视频与商品趋势采集。",
@@ -239,8 +242,16 @@ public class ExternalDataSourceService {
     }
 
     public List<String> woocommerceStores() {
+        return woocommerceStores("jp");
+    }
+
+    public List<String> woocommerceStores(String marketKey) {
         if (!properties.woocommerceEnabled()) return List.of();
-        return split(properties.woocommerceStoreUrls());
+        return switch (MarketCatalog.get(marketKey).key()) {
+            case "us" -> split(properties.woocommerceUsStoreUrls());
+            case "sea" -> split(properties.woocommerceSeaStoreUrls());
+            default -> split(properties.woocommerceStoreUrls());
+        };
     }
 
     public List<String> googleTrendRegions() {
@@ -295,7 +306,8 @@ public class ExternalDataSourceService {
     }
 
     private boolean wooConfigured() {
-        return properties.woocommerceEnabled() && !woocommerceStores().isEmpty();
+        return properties.woocommerceEnabled()
+            && MarketCatalog.keys().stream().anyMatch(key -> !woocommerceStores(key).isEmpty());
     }
 
     private String rakutenBaseUrl() {

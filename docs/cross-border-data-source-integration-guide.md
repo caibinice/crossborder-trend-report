@@ -8,7 +8,7 @@
 |---|---|---:|---|---|
 | Google Trends 热门搜索 RSS（JP/US/SG） | 已接入 | 不需要 | `trend_signals`、`data_collection_runs` | 前台“搜索趋势”、后台“数据源配置” |
 | Frankfurter 公共汇率（默认 JPY/CNY） | 已接入 | 不需要 | `exchange_rates`、`data_collection_runs` | 前台汇率指标、后台“数据源配置” |
-| WooCommerce 公开 Store API 商品 | 已接入 | 不需要 | `trend_reports`、`trend_products`、`domestic_links` | 前台商品机会池、后台商品池/日报 |
+| WooCommerce 公开 Store API 商品（JP / US / SEA 独立店铺列表） | 已接入 | 不需要 | `trend_reports`、`trend_products`、`domestic_links` | 三市场商品机会池、后台商品池/日报 |
 | Yahoo! Japan 高评价趋势榜 + Shopping v3 | 适配器已完成 | Client ID | 同上 | 配好凭证后自动加入真实日报 |
 | Rakuten Ichiba Item Search 2026 | 适配器已完成 | Application ID + Access Key | 同上 | 配好凭证后自动加入真实日报 |
 | Amazon / Rainforest API | 适配器已完成 | API Key | 同上 | 配好凭证后自动加入真实日报 |
@@ -101,10 +101,12 @@ GOOGLE_TRENDS_REGIONS=JP,US,SG
 FRANKFURTER_ENABLED=true
 WOOCOMMERCE_ENABLED=true
 WOOCOMMERCE_STORE_URLS=https://www.somethingfromjapan.com
+WOOCOMMERCE_US_STORE_URLS=https://thompsonhanson.com,https://helloyumi.com
+WOOCOMMERCE_SEA_STORE_URLS=https://watchexchange.sg,https://publico.sg
 AI_ENRICHMENT_ENABLED=true
 ```
 
-`WOOCOMMERCE_STORE_URLS` 支持逗号分隔多个公开店铺。店铺必须能访问 `/wp-json/wc/store/v1/products`。
+三个 `WOOCOMMERCE_*_STORE_URLS` 变量都支持逗号分隔多个公开店铺，分别只进入 JP、US、SEA 日报。店铺必须能访问 `/wp-json/wc/store/v1/products`。
 
 ### 第 4 步：后台启动（不会占住当前终端）
 
@@ -129,7 +131,7 @@ Get-Content .\logs\backend.err.log -Tail 100
 2. 登录（开发库默认 `admin / admin`）；
 3. 左侧进入 **选品配置 → 数据源配置**；
 4. 对 Google Trends、Frankfurter、WooCommerce、Rakuten 和 DeepSeek 依次点 **测试连接**；没有配置凭证的来源可跳过；
-5. 进入 **选品配置 → 参数配置**，确认默认 10 个品类、最多 10 个品类、每类 10 件；也可以改成自己的数量；
+5. 进入 **选品配置 → 参数配置**，确认默认 10 个英文品类、每类 20 件、每市场最多 200 件；也可以改成自己的数量；
 6. 在同页选择品类内按“销量指数”或“销售额指数”筛选；系统最终仍按综合热度倒序展示；
 7. 按 `名称|URL模板` 每行一个配置采购站点，URL 必须包含 `{keyword}`。默认已经有 1688、淘宝和拼多多；
 8. 对 Google Trends、Frankfurter 点 **立即同步**；
@@ -178,7 +180,7 @@ WooCommerce Store API 是公开商品目录接口，通常不需要消费者密�
 4. 把店铺根地址加入 `.env`：
 
 ```env
-WOOCOMMERCE_STORE_URLS=https://shop-a.example.com,https://shop-b.example.com
+WOOCOMMERCE_US_STORE_URLS=https://shop-a.example.com,https://shop-b.example.com
 ```
 
 5. 重启项目，在后台测试 WooCommerce；

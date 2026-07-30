@@ -34,10 +34,10 @@ class WooCommerceTrendSourceTest {
         assertEquals(1, candidates.size());
         TrendCandidate candidate = candidates.get(0);
         assertEquals("Matcha & Chocolate Gift", candidate.productNameJp());
-        assertEquals("食品", candidate.category());
+        assertEquals("Food", candidate.category());
         assertEquals("USD", candidate.sourceCurrency());
         assertEquals(0, new BigDecimal("12.99").compareTo(candidate.sourcePrice()));
         assertEquals("https://shop.test/matcha.jpg", candidate.imageUrl());
-        assertTrue(candidate.reason().contains("评论=23"));
+        assertTrue(candidate.reason().contains("reviews=23"));
     }
 }

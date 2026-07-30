@@ -43,4 +43,31 @@ class TrendReportServiceTest {
         assertSame(expected, service.collect(LocalDate.of(2026, 7, 16), false));
         verifyNoInteractions(demo, domestic, external, exchangeRates);
     }
+
+    @Test
+    void nonJapanMarketsUseTheirOwnExternalReportKey() {
+        TrendRepository repository = mock(TrendRepository.class);
+        DemoJapanTrendSource demo = mock(DemoJapanTrendSource.class);
+        DomesticSearchService domestic = mock(DomesticSearchService.class);
+        AdminSettingsService settings = mock(AdminSettingsService.class);
+        ExternalTrendDataSource external = mock(ExternalTrendDataSource.class);
+        ExchangeRateService exchangeRates = mock(ExchangeRateService.class);
+        PlatformTransactionManager transactions = mock(PlatformTransactionManager.class);
+        LocalDate date = LocalDate.of(2026, 7, 17);
+        TrendReport expected = new TrendReport(10, date, "WooCommerce US", "US report", "", Instant.now(), List.of());
+        when(repository.byDateAndSourceKey(date, "us:external")).thenReturn(Optional.of(expected));
+        when(settings.get()).thenReturn(new com.example.crossborder.model.AdminSettings(
+            List.of("demo"), List.of("1688"), List.of("Toys"), List.of("United States"), "demo",
+            "0 30 8 * * *", 200, new BigDecimal("0.048"), false, new BigDecimal("18"), false
+        ));
+
+        TrendReportService service = new TrendReportService(
+            demo, domestic, repository, settings, external,
+            new ReportProperties("0 30 8 * * *", "Asia/Shanghai", new BigDecimal("0.048"), new BigDecimal("18"), "demo", 200, new BigDecimal("0.12"), new BigDecimal("0.03"), BigDecimal.ZERO, BigDecimal.ZERO),
+            new ProfitCalculator(), exchangeRates, transactions
+        );
+
+        assertSame(expected, service.collect(date, "us", false));
+        verifyNoInteractions(demo, domestic, external, exchangeRates);
+    }
 }

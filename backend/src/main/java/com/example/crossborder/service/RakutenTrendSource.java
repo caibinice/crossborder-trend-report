@@ -106,9 +106,9 @@ public class RakutenTrendSource {
                 double amountSignal = volumeSignal * price.doubleValue();
                 String shopName = item.path("shopName").asText("").trim();
                 String itemUrl = item.path("affiliateUrl").asText(item.path("itemUrl").asText("https://www.rakuten.co.jp/"));
-                String evidence = "乐天评论热度排序第 " + position + "；评论=" + reviews + "，评分=" + rating
-                    + (shopName.isBlank() ? "" : "；店铺=" + shopName)
-                    + (item.path("shipOverseasFlag").asInt(0) == 1 ? "；支持海外配送" : "") + "。";
+                String evidence = "Rakuten review-popularity rank #" + position + "; reviews=" + reviews + ", rating=" + rating
+                    + (shopName.isBlank() ? "" : "; store=" + shopName)
+                    + (item.path("shipOverseasFlag").asInt(0) == 1 ? "; international shipping available" : "") + ".";
                 candidates.add(new TrendCandidate(
                     category, title, title, JapaneseCategoryQueries.forCategory(category), "Rakuten Ichiba",
                     itemUrl, image(item), round(heat), volumeSignal, amountSignal, 50D, price, "JPY", evidence

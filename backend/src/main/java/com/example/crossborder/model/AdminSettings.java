@@ -39,8 +39,8 @@ public record AdminSettings(
             "sales_volume",
             List.of(
                 new SupplierSiteConfig("1688", "https://s.1688.com/selloffer/offer_search.htm?keywords={keyword}"),
-                new SupplierSiteConfig("淘宝", "https://s.taobao.com/search?q={keyword}"),
-                new SupplierSiteConfig("拼多多", "https://mobile.yangkeduo.com/search_result.html?search_key={keyword}")
+                new SupplierSiteConfig("Taobao", "https://s.taobao.com/search?q={keyword}"),
+                new SupplierSiteConfig("Pinduoduo", "https://mobile.yangkeduo.com/search_result.html?search_key={keyword}")
             )
         );
     }

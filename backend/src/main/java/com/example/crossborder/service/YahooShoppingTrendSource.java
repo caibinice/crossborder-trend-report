@@ -101,8 +101,9 @@ public class YahooShoppingTrendSource {
                     item.path("url").asText("https://shopping.yahoo.co.jp/"),
                     ranked.path("image").path("medium").asText(ranked.path("image").path("small").asText(null)),
                     round(heat), volumeSignal, amountSignal, 50D, price, "JPY",
-                    "Yahoo 官方高评价趋势第 " + rank + "；该榜单综合下单人数与评论信号，但接口不公开具体销量；评论="
-                        + reviews + "，评分=" + rating + "。"
+                    "Yahoo official high-rating trend rank #" + rank
+                        + "; the list combines shopper and review signals without exposing actual sales; reviews="
+                        + reviews + ", rating=" + rating + "."
                 ));
             }
             return candidates;
@@ -131,7 +132,7 @@ public class YahooShoppingTrendSource {
                     category, title, title, JapaneseCategoryQueries.forCategory(category), "Yahoo! Japan Shopping",
                     item.path("url").asText("https://shopping.yahoo.co.jp/"), image, round(heat),
                     volumeSignal, amountSignal, 50D, price, "JPY",
-                    "Yahoo 日本购物评论排序第 " + position + "；评论=" + reviews + "，评分=" + rating + "。"
+                    "Yahoo Japan review rank #" + position + "; reviews=" + reviews + ", rating=" + rating + "."
                 ));
             }
             return candidates;

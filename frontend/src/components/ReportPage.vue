@@ -3,9 +3,9 @@
     <aside :class="['app-sidebar', { open: sidebarOpen }]">
       <div class="brand-lockup">
         <span class="brand-mark"><AppIcon name="sparkles" /></span>
-        <div><strong>Northstar</strong><small>跨境趋势情报</small></div>
+        <div><strong>Northstar</strong><small>Cross-border Intelligence</small></div>
       </div>
-      <div class="sidebar-label">市场雷达</div>
+      <div class="sidebar-label">MARKET RADAR</div>
       <nav class="sidebar-nav market-nav">
         <button v-for="market in markets" :key="market.key" :class="['nav-item', { active: activeMarket === market.key }]" @click="selectMarket(market)">
           <span class="nav-icon"><AppIcon name="globe" /></span>
@@ -15,22 +15,22 @@
       </nav>
       <div class="sidebar-spacer" />
       <div class="sidebar-status">
-        <div><span class="pulse-dot" /><b>{{ configuredLiveSources }} 个数据能力已就绪</b></div>
-        <small>公开趋势、汇率与商品目录均写入云端 MySQL</small>
+        <div><span class="pulse-dot" /><b>{{ configuredLiveSources }} data capabilities ready</b></div>
+        <small>Public trends, FX, and catalogs are persisted to MySQL</small>
       </div>
     </aside>
-    <button v-if="sidebarOpen" class="sidebar-scrim" aria-label="关闭导航" @click="sidebarOpen = false" />
+    <button v-if="sidebarOpen" class="sidebar-scrim" aria-label="Close navigation" @click="sidebarOpen = false" />
 
     <section class="app-workspace">
       <header class="app-topbar">
         <div class="topbar-title">
-          <button class="icon-button mobile-menu" aria-label="打开导航" @click="sidebarOpen = true"><AppIcon name="menu" /></button>
-          <div><small>趋势情报 / {{ currentMarket.name }}</small><strong>选品驾驶舱</strong></div>
+          <button class="icon-button mobile-menu" aria-label="Open navigation" @click="sidebarOpen = true"><AppIcon name="menu" /></button>
+          <div><small>Trend Intelligence / {{ currentMarket.name }}</small><strong>Product Discovery</strong></div>
         </div>
         <div class="topbar-actions">
-          <span class="sync-state"><span class="pulse-dot" />数据云端同步</span>
+          <span class="sync-state"><span class="pulse-dot" />Cloud data synced</span>
           <ThemeToggle />
-          <RouterLink class="button secondary-button" to="/admin"><AppIcon name="settings" />管理后台</RouterLink>
+          <RouterLink class="button secondary-button" to="/admin"><AppIcon name="settings" />Admin</RouterLink>
         </div>
       </header>
 
@@ -38,8 +38,8 @@
         <section class="hero-panel">
           <div class="hero-copy">
             <span class="overline"><AppIcon name="bolt" />LIVE COMMERCE INTELLIGENCE</span>
-            <h1>{{ currentMarket.name }}<br /><em>商品机会雷达</em></h1>
-            <p>融合真实商品目录、搜索趋势、多币种汇率与采购成本，快速判断值得验证的跨境机会。</p>
+            <h1>{{ currentMarket.name }}<br /><em>Product Opportunity Radar</em></h1>
+            <p>Combine live product catalogs, search trends, multi-currency FX, and sourcing costs to identify opportunities worth validating.</p>
             <div class="hero-badges"><span>Google Trends</span><span>Rakuten Ichiba</span><span>WooCommerce</span><span>DeepSeek V4 Pro</span></div>
           </div>
           <div class="hero-orbit" aria-hidden="true">
@@ -50,49 +50,49 @@
         </section>
 
         <section class="metric-grid dashboard-metrics">
-          <article><span class="metric-icon blue"><AppIcon name="database" /></span><div><small>当前商品</small><b>{{ products.length }}</b><p>{{ realProductCount }} 条真实目录数据</p></div></article>
-          <article><span class="metric-icon violet"><AppIcon name="activity" /></span><div><small>平均热度</small><b>{{ averageHeat }}</b><p>基于来源排序与互动</p></div></article>
-          <article><span class="metric-icon green"><AppIcon name="money" /></span><div><small>正利润机会</small><b>{{ profitableCount }}</b><p>按当前费用模型估算</p></div></article>
-          <article><span class="metric-icon amber"><AppIcon name="globe" /></span><div><small>JPY / CNY</small><b>{{ exchangeRate?.rateValue ? Number(exchangeRate.rateValue).toFixed(5) : '-' }}</b><p>{{ exchangeRate ? `${exchangeRate.provider} · ${exchangeRate.rateDate}` : '等待首次同步' }}</p></div></article>
+          <article><span class="metric-icon blue"><AppIcon name="database" /></span><div><small>Current products</small><b>{{ products.length }}</b><p>{{ realProductCount }} live catalog records</p></div></article>
+          <article><span class="metric-icon violet"><AppIcon name="activity" /></span><div><small>Average heat</small><b>{{ averageHeat }}</b><p>Based on source rank and engagement</p></div></article>
+          <article><span class="metric-icon green"><AppIcon name="money" /></span><div><small>Positive-margin opportunities</small><b>{{ profitableCount }}</b><p>Estimated with the current cost model</p></div></article>
+          <article><span class="metric-icon amber"><AppIcon name="globe" /></span><div><small>{{ currentMarket.currency }} / CNY</small><b>{{ exchangeRate?.rateValue ? Number(exchangeRate.rateValue).toFixed(5) : '-' }}</b><p>{{ exchangeRate ? `${exchangeRate.provider} · ${exchangeRate.rateDate}` : 'Waiting for first sync' }}</p></div></article>
         </section>
 
         <section class="insight-grid">
           <article class="surface-panel trend-radar-panel">
-            <div class="panel-heading"><div><span class="overline">REAL-TIME SIGNALS</span><h2>{{ currentMarket.name }}搜索趋势</h2></div><span class="live-chip"><span class="pulse-dot" />实时源</span></div>
+            <div class="panel-heading"><div><span class="overline">REAL-TIME SIGNALS</span><h2>{{ currentMarket.name }} Search Trends</h2></div><span class="live-chip"><span class="pulse-dot" />Live feed</span></div>
             <div v-if="trendSignals.length" class="trend-list">
-              <a v-for="(signal, index) in sortedTrendSignals.slice(0, 8)" :key="signal.id" :href="signal.sourceUrl" target="_blank" rel="noreferrer" class="trend-row" :title="`原始搜索量：${signal.trafficLabel || signal.trafficValue}`">
+              <a v-for="(signal, index) in sortedTrendSignals.slice(0, 8)" :key="signal.id" :href="signal.sourceUrl" target="_blank" rel="noreferrer" class="trend-row" :title="`Original search traffic: ${signal.trafficLabel || signal.trafficValue}`">
                 <span class="trend-rank">{{ String(index + 1).padStart(2, '0') }}</span>
                 <div><b>{{ signal.keyword }}</b><span><i :style="{ width: `${trendHeat(signal, index)}%` }" /></span></div>
-                <strong>热度 {{ trendHeat(signal, index) }}</strong>
+                <strong>Heat {{ trendHeat(signal, index) }}</strong>
               </a>
             </div>
-            <div v-else class="compact-empty"><AppIcon name="activity" /><div><b>还没有实时趋势</b><p>进入后台数据源配置，点击 Google Trends 的“立即同步”。</p></div></div>
+            <div v-else class="compact-empty"><AppIcon name="activity" /><div><b>No live trends yet</b><p>Open Data Sources in Admin and sync Google Trends.</p></div></div>
           </article>
 
           <article class="surface-panel source-overview-panel">
-            <div class="panel-heading"><div><span class="overline">DATA PIPELINE</span><h2>数据链路</h2></div><RouterLink to="/admin/selection/sources">管理</RouterLink></div>
+            <div class="panel-heading"><div><span class="overline">DATA PIPELINE</span><h2>Data Pipeline</h2></div><RouterLink to="/admin/selection/sources">Manage</RouterLink></div>
             <div class="pipeline-list">
-              <div v-for="source in primarySources" :key="source.key" class="pipeline-item"><span :class="['metric-icon', source.configured ? 'green' : 'neutral']"><AppIcon :name="sourceIcon(source.type)" /></span><div><b>{{ source.name }}</b><small>{{ source.configured ? (source.live ? '开箱即用 · 已连接' : '凭证已配置') : '等待配置材料' }}</small></div><span :class="['status-pill', source.configured ? 'success' : 'pending']">{{ source.configured ? '就绪' : '待配置' }}</span></div>
+              <div v-for="source in primarySources" :key="source.key" class="pipeline-item"><span :class="['metric-icon', source.configured ? 'green' : 'neutral']"><AppIcon :name="sourceIcon(source.type)" /></span><div><b>{{ source.name }}</b><small>{{ source.configured ? (source.live ? 'Public · Connected' : 'Credentials configured') : 'Configuration required' }}</small></div><span :class="['status-pill', source.configured ? 'success' : 'pending']">{{ source.configured ? 'Ready' : 'Pending' }}</span></div>
             </div>
           </article>
         </section>
 
         <template v-if="currentMarket.catalogEnabled">
           <section class="surface-panel report-control-panel">
-            <div class="report-copy"><span class="overline">LATEST PRODUCT SNAPSHOT</span><h2>{{ report?.title || '等待首份真实商品日报' }}</h2><p>{{ report?.summary || '点击右侧采集按钮，将公开商品目录实时写入云端 MySQL。' }}</p></div>
+            <div class="report-copy"><span class="overline">LATEST PRODUCT SNAPSHOT</span><h2>{{ report?.title || 'Waiting for the first live product report' }}</h2><p>{{ report?.summary || 'Collect public catalog products and persist them to MySQL.' }}</p></div>
             <div class="report-actions">
-              <label class="field compact-field"><span>历史日报</span><select :value="report?.id || ''" :disabled="!reports.length || loading" @change="loadReportById(Number($event.target.value))"><option v-for="item in reports" :key="item.id" :value="item.id">{{ item.reportDate }} · {{ item.productCount }} 件</option></select></label>
-              <button class="primary-button" :disabled="loading" @click="collect"><AppIcon :name="loading ? 'refresh' : 'sparkles'" :class="{ spinning: loading }" />{{ loading ? '正在采集并计算…' : '采集最新商品' }}</button>
+              <label class="field compact-field"><span>Report history</span><select :value="report?.id || ''" :disabled="!reports.length || loading" @change="loadReportById(Number($event.target.value))"><option v-for="item in reports" :key="item.id" :value="item.id">{{ item.reportDate }} · {{ item.productCount }} products</option></select></label>
+              <button class="primary-button" :disabled="loading" @click="collect"><AppIcon :name="loading ? 'refresh' : 'sparkles'" :class="{ spinning: loading }" />{{ loading ? 'Collecting and scoring…' : 'Collect latest products' }}</button>
             </div>
           </section>
 
-          <section v-if="!report && !loading" class="empty-state large-empty"><AppIcon name="package" /><h2>还没有商品日报</h2><p>首次采集会读取真实公开目录、同步汇率并计算利润，不会静默使用 Demo。</p><button class="primary-button" @click="collect">开始首次采集</button></section>
+          <section v-if="!report && !loading" class="empty-state large-empty"><AppIcon name="package" /><h2>No product report yet</h2><p>The first run reads live public catalogs, resolves FX, and estimates margins without silently using demo data.</p><button class="primary-button" @click="collect">Start first collection</button></section>
           <template v-else-if="report">
             <section class="catalog-heading">
-              <div><span class="overline">OPPORTUNITY CATALOG</span><h2>商品机会池</h2><p>更新时间 {{ formatDateTime(report.createdAt) }} · {{ products.length }} 个候选</p></div>
+              <div><span class="overline">OPPORTUNITY CATALOG</span><h2>Product Opportunity Pool</h2><p>Updated {{ formatDateTime(report.createdAt) }} · {{ products.length }} candidates</p></div>
               <div class="catalog-controls">
-                <div class="segmented-control ranking-switch"><button :class="{ active: rankingView === 'heat' }" @click="rankingView = 'heat'">综合热度</button><button :class="{ active: rankingView === 'volume' }" @click="rankingView = 'volume'">销量指数</button><button :class="{ active: rankingView === 'amount' }" @click="rankingView = 'amount'">销售额指数</button></div>
-                <div class="segmented-control"><button :class="{ active: activeTab === 'card' }" @click="activeTab = 'card'"><AppIcon name="grid" />卡片</button><button :class="{ active: activeTab === 'table' }" @click="activeTab = 'table'"><AppIcon name="table" />列表</button></div>
+                <div class="segmented-control ranking-switch"><button :class="{ active: rankingView === 'heat' }" @click="rankingView = 'heat'">Composite heat</button><button :class="{ active: rankingView === 'volume' }" @click="rankingView = 'volume'">Sales-volume proxy</button><button :class="{ active: rankingView === 'amount' }" @click="rankingView = 'amount'">Sales-value proxy</button></div>
+                <div class="segmented-control"><button :class="{ active: activeTab === 'card' }" @click="activeTab = 'card'"><AppIcon name="grid" />Cards</button><button :class="{ active: activeTab === 'table' }" @click="activeTab = 'table'"><AppIcon name="table" />Table</button></div>
               </div>
             </section>
 
@@ -100,32 +100,32 @@
             <section v-if="activeTab === 'card'" class="product-grid"><ProductCard v-for="(product, index) in cardProducts" :key="product.id" :product="product" :display-rank="index + 1" /></section>
             <template v-else>
               <section class="filter-panel modern-filter">
-                <label class="field search-field"><span>搜索商品</span><div><AppIcon name="search" /><input v-model="filters.keyword" placeholder="商品名、关键词、来源" /></div></label>
-                <label class="field"><span>品类</span><select v-model="filters.category"><option v-for="category in categories" :key="category">{{ category }}</option></select></label>
-                <label class="field"><span>最低热度</span><input v-model="filters.minHeat" type="number" placeholder="不限" /></label>
-                <label class="field"><span>最低利润</span><input v-model="filters.minProfit" type="number" placeholder="不限" /></label>
-                <label class="field"><span>排序方式</span><select v-model="filters.sortBy"><option value="rank">综合排名</option><option value="heat">热度优先</option><option value="volume">销量指数</option><option value="amount">销售额指数</option><option value="profit">利润优先</option><option value="margin">毛利率优先</option><option value="cost">成本优先</option></select></label>
-                <button class="secondary-button filter-reset" @click="resetFilters">重置</button>
+                <label class="field search-field"><span>Search products</span><div><AppIcon name="search" /><input v-model="filters.keyword" placeholder="Name, keyword, or source" /></div></label>
+                <label class="field"><span>Category</span><select v-model="filters.category"><option v-for="category in categories" :key="category">{{ category }}</option></select></label>
+                <label class="field"><span>Minimum heat</span><input v-model="filters.minHeat" type="number" placeholder="Any" /></label>
+                <label class="field"><span>Minimum profit</span><input v-model="filters.minProfit" type="number" placeholder="Any" /></label>
+                <label class="field"><span>Sort by</span><select v-model="filters.sortBy"><option value="rank">Composite rank</option><option value="heat">Heat</option><option value="volume">Sales-volume proxy</option><option value="amount">Sales-value proxy</option><option value="profit">Profit</option><option value="margin">Margin</option><option value="cost">Cost</option></select></label>
+                <button class="secondary-button filter-reset" @click="resetFilters">Reset</button>
               </section>
-              <div class="result-summary">筛选出 <b>{{ filteredProducts.length }}</b> 个商品机会</div>
+              <div class="result-summary"><b>{{ filteredProducts.length }}</b> product opportunities</div>
               <ProductTable :products="filteredProducts" />
             </template>
           </template>
         </template>
 
-        <section v-else class="surface-panel market-coming-panel"><span class="metric-icon blue"><AppIcon name="globe" /></span><div><span class="overline">SIGNAL MODE</span><h2>{{ currentMarket.name }}商品目录待接入</h2><p>实时搜索趋势已经可以查看；补充对应市场的官方商品 API 凭证后，即可复用现有入库、汇率和利润模型。</p></div><RouterLink class="button primary-button" to="/admin/selection/sources">配置数据源<AppIcon name="arrow" /></RouterLink></section>
+        <section v-else class="surface-panel market-coming-panel"><span class="metric-icon blue"><AppIcon name="globe" /></span><div><span class="overline">SIGNAL MODE</span><h2>{{ currentMarket.name }} catalog pending</h2><p>Live search trends are available. Configure a catalog source to enable product reports and margin analysis.</p></div><RouterLink class="button primary-button" to="/admin/selection/sources">Configure sources<AppIcon name="arrow" /></RouterLink></section>
       </div>
       <p v-if="notice" class="toast error"><AppIcon name="warning" />{{ notice }}</p>
     </section>
     <div v-if="actionAuthOpen" class="modal-backdrop" role="presentation" @mousedown.self="closeActionAuth">
       <form class="modal-dialog action-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="action-auth-title" @submit.prevent="verifyAndCollect">
-        <header class="modal-header"><div><span class="overline">PROTECTED ACTION</span><h3 id="action-auth-title">验证敏感操作</h3></div><button type="button" class="icon-button" aria-label="关闭" @click="closeActionAuth"><AppIcon name="x" /></button></header>
+        <header class="modal-header"><div><span class="overline">PROTECTED ACTION</span><h3 id="action-auth-title">Verify protected action</h3></div><button type="button" class="icon-button" aria-label="Close" @click="closeActionAuth"><AppIcon name="x" /></button></header>
         <div class="modal-scroll">
-          <p class="action-auth-copy">实时抓取、AI 补全与报告生成会消耗服务器和外部接口资源，请输入操作密码继续。</p>
-          <label class="field"><span>操作密码</span><input v-model="actionPassword" autofocus type="password" autocomplete="current-password" /></label>
+          <p class="action-auth-copy">Live collection, AI enrichment, and report generation consume server and upstream resources. Enter the action password to continue.</p>
+          <label class="field"><span>Action password</span><input v-model="actionPassword" autofocus type="password" autocomplete="current-password" /></label>
           <p v-if="actionAuthError" class="inline-notice error">{{ actionAuthError }}</p>
         </div>
-        <footer class="modal-actions"><button type="button" class="secondary-button" :disabled="actionVerifying" @click="closeActionAuth">取消</button><button class="primary-button" :disabled="actionVerifying || !actionPassword"><AppIcon :name="actionVerifying ? 'refresh' : 'shield'" :class="{ spinning: actionVerifying }" />{{ actionVerifying ? '验证中…' : '验证并采集' }}</button></footer>
+        <footer class="modal-actions"><button type="button" class="secondary-button" :disabled="actionVerifying" @click="closeActionAuth">Cancel</button><button class="primary-button" :disabled="actionVerifying || !actionPassword"><AppIcon :name="actionVerifying ? 'refresh' : 'shield'" :class="{ spinning: actionVerifying }" />{{ actionVerifying ? 'Verifying…' : 'Verify and collect' }}</button></footer>
       </form>
     </div>
   </main>
@@ -140,9 +140,9 @@ import ThemeToggle from './ThemeToggle.vue';
 import { api, formatDateTime, isDemoProduct, regionOf, searchableText } from '../lib.js';
 
 const markets = [
-  { key: 'jp', region: 'JP', name: '日本市场', desc: '商品目录 + 实时趋势', catalogEnabled: true },
-  { key: 'us', region: 'US', name: '美国市场', desc: '实时趋势信号', catalogEnabled: false },
-  { key: 'sea', region: 'SG', name: '东南亚市场', desc: '新加坡趋势信号', catalogEnabled: false },
+  { key: 'jp', region: 'JP', currency: 'JPY', name: 'Japan', desc: 'Public catalogs + live trends', catalogEnabled: true },
+  { key: 'us', region: 'US', currency: 'USD', name: 'United States', desc: 'US catalogs + live trends', catalogEnabled: true },
+  { key: 'sea', region: 'SG', currency: 'SGD', name: 'Southeast Asia', desc: 'Singapore catalogs + SEA trends', catalogEnabled: true },
 ];
 const activeMarket = ref('jp');
 const currentMarket = computed(() => markets.find((item) => item.key === activeMarket.value) || markets[0]);
@@ -155,28 +155,33 @@ const trendSignals = ref([]);
 const exchangeRate = ref(null);
 const activeTab = ref('card');
 const rankingView = ref('heat');
-const quickCategory = ref('全部');
+const quickCategory = ref('All');
 const loading = ref(false);
 const notice = ref('');
 const actionAuthOpen = ref(false);
 const actionPassword = ref('');
 const actionAuthError = ref('');
 const actionVerifying = ref(false);
-const filters = reactive({ keyword: '', category: '全部', minHeat: '', minProfit: '', maxCost: '', sortBy: 'rank' });
+const filters = reactive({ keyword: '', category: 'All', minHeat: '', minProfit: '', maxCost: '', sortBy: 'rank' });
 const ACTION_TOKEN_KEY = 'crossborder-action-token';
 
 const products = computed(() => report.value?.products || []);
-const categories = computed(() => ['全部', ...new Set(products.value.map((item) => item.category))]);
+const categories = computed(() => ['All', ...new Set(products.value.map((item) => item.category))]);
 const rankedProducts = computed(() => products.value.slice().sort((a, b) => {
   const field = rankingView.value === 'volume' ? 'salesVolumeScore' : rankingView.value === 'amount' ? 'salesAmountScore' : 'heatScore';
   return Number(b[field] || 0) - Number(a[field] || 0) || Number(b.heatScore || 0) - Number(a.heatScore || 0);
 }));
-const cardProducts = computed(() => quickCategory.value === '全部' ? rankedProducts.value : rankedProducts.value.filter((item) => item.category === quickCategory.value));
+const cardProducts = computed(() => quickCategory.value === 'All' ? rankedProducts.value : rankedProducts.value.filter((item) => item.category === quickCategory.value));
 const realProductCount = computed(() => products.value.filter((item) => !isDemoProduct(item)).length);
 const profitableCount = computed(() => products.value.filter((item) => Number(item.estimatedProfitCny || 0) > 0).length);
 const averageHeat = computed(() => products.value.length ? (products.value.reduce((sum, item) => sum + Number(item.heatScore || 0), 0) / products.value.length).toFixed(1) : '-');
 const configuredLiveSources = computed(() => dataSources.value.filter((item) => item.configured).length);
-const primarySources = computed(() => dataSources.value.filter((item) => ['google-trends', 'frankfurter', 'woocommerce', 'yahoo-shopping', 'rakuten'].includes(item.key)).slice(0, 5));
+const primarySources = computed(() => {
+  const keys = currentMarket.value.key === 'jp'
+    ? ['google-trends', 'frankfurter', 'woocommerce', 'yahoo-shopping', 'rakuten']
+    : ['google-trends', 'frankfurter', 'woocommerce', 'deepseek'];
+  return dataSources.value.filter((item) => keys.includes(item.key)).slice(0, 5);
+});
 const sortedTrendSignals = computed(() => trendSignals.value.slice().sort((a, b) => Number(b.trafficValue || 0) - Number(a.trafficValue || 0)));
 const filteredProducts = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase();
@@ -184,7 +189,7 @@ const filteredProducts = computed(() => {
   const minProfit = filters.minProfit === '' ? null : Number(filters.minProfit);
   const maxCost = filters.maxCost === '' ? null : Number(filters.maxCost);
   return products.value.filter((product) => {
-    if (filters.category !== '全部' && product.category !== filters.category) return false;
+    if (filters.category !== 'All' && product.category !== filters.category) return false;
     if (keyword && !searchableText(product).includes(keyword)) return false;
     if (minHeat !== null && Number(product.heatScore || 0) < minHeat) return false;
     if (minProfit !== null && Number(product.estimatedProfitCny || 0) < minProfit) return false;
@@ -204,21 +209,46 @@ async function optional(path) { try { return await api(path); } catch { return n
 async function load() {
   notice.value = '';
   try {
-    const [healthData, summaries, sources, signals, rate] = await Promise.all([
-      api('/health'), api('/reports/summaries?limit=30'), api('/datasources'),
-      optional(`/trend-signals?region=${currentMarket.value.region}&limit=20`), optional('/exchange-rates/latest?base=JPY&quote=CNY'),
+    const [healthData, sources] = await Promise.all([
+      api('/health'), api('/datasources'),
     ]);
-    health.value = healthData; reports.value = summaries; dataSources.value = sources; trendSignals.value = signals || []; exchangeRate.value = rate;
-    report.value = summaries.length ? await api(`/reports/${summaries[0].id}`) : null;
-  } catch (error) { notice.value = error.message || '加载数据失败'; }
+    health.value = healthData;
+    dataSources.value = sources;
+    await loadMarketData();
+  } catch (error) { notice.value = error.message || 'Failed to load data'; }
 }
 async function selectMarket(market) {
-  activeMarket.value = market.key; sidebarOpen.value = false; trendSignals.value = [];
-  trendSignals.value = await optional(`/trend-signals?region=${market.region}&limit=20`) || [];
+  activeMarket.value = market.key;
+  sidebarOpen.value = false;
+  await loadMarketData();
+}
+async function loadMarketData() {
+  loading.value = true;
+  notice.value = '';
+  report.value = null;
+  reports.value = [];
+  trendSignals.value = [];
+  quickCategory.value = 'All';
+  try {
+    const market = currentMarket.value;
+    const [summaries, signals, rate] = await Promise.all([
+      api(`/reports/summaries?limit=30&marketKey=${market.key}`),
+      optional(`/trend-signals?region=${market.region}&limit=20`),
+      optional(`/exchange-rates/latest?base=${market.currency}&quote=CNY`),
+    ]);
+    reports.value = summaries;
+    trendSignals.value = signals || [];
+    exchangeRate.value = rate;
+    report.value = summaries.length ? await api(`/reports/${summaries[0].id}`) : null;
+  } catch (error) {
+    notice.value = error.message || 'Failed to load market data';
+  } finally {
+    loading.value = false;
+  }
 }
 async function loadReportById(id) {
   if (!id) return; loading.value = true; notice.value = '';
-  try { report.value = await api(`/reports/${id}`); quickCategory.value = '全部'; } catch (error) { notice.value = error.message || '加载日报失败'; } finally { loading.value = false; }
+  try { report.value = await api(`/reports/${id}`); quickCategory.value = 'All'; } catch (error) { notice.value = error.message || 'Failed to load report'; } finally { loading.value = false; }
 }
 function closeActionAuth() {
   if (actionVerifying.value) return;
@@ -244,7 +274,7 @@ async function verifyAndCollect() {
     actionAuthOpen.value = false; actionPassword.value = '';
     await collectWithAuthorization(`Bearer ${verified.token}`);
   } catch (error) {
-    actionAuthError.value = error.message || '操作密码验证失败';
+    actionAuthError.value = error.message || 'Action password verification failed';
   } finally {
     actionVerifying.value = false;
   }
@@ -252,12 +282,21 @@ async function verifyAndCollect() {
 async function collectWithAuthorization(authorization) {
   loading.value = true; notice.value = '';
   try {
-    report.value = await api('/collect/run', { method: 'POST', headers: { Authorization: authorization }, body: JSON.stringify({ force: true }) });
-    const [healthData, summaries, rate] = await Promise.all([api('/health'), api('/reports/summaries?limit=30'), optional('/exchange-rates/latest?base=JPY&quote=CNY')]);
-    health.value = healthData; reports.value = summaries; exchangeRate.value = rate; quickCategory.value = '全部';
+    const market = currentMarket.value;
+    report.value = await api('/collect/run', {
+      method: 'POST',
+      headers: { Authorization: authorization },
+      body: JSON.stringify({ force: true, marketKey: market.key }),
+    });
+    const [healthData, summaries, rate] = await Promise.all([
+      api('/health'),
+      api(`/reports/summaries?limit=30&marketKey=${market.key}`),
+      optional(`/exchange-rates/latest?base=${market.currency}&quote=CNY`),
+    ]);
+    health.value = healthData; reports.value = summaries; exchangeRate.value = rate; quickCategory.value = 'All';
   } catch (error) {
     if (error.status === 401) sessionStorage.removeItem(ACTION_TOKEN_KEY);
-    notice.value = error.message || '采集商品失败';
+    notice.value = error.message || 'Product collection failed';
   } finally { loading.value = false; }
 }
 function trendHeat(signal, index = 0) {
@@ -267,8 +306,8 @@ function trendHeat(signal, index = 0) {
   if (max === min) return Math.max(1, Math.round(100 - index * 99 / Math.max(1, values.length - 1)));
   return Math.max(1, Math.min(100, Math.round(1 + (current - min) / (max - min) * 99)));
 }
-function categoryCount(category) { return category === '全部' ? products.value.length : products.value.filter((item) => item.category === category).length; }
+function categoryCount(category) { return category === 'All' ? products.value.length : products.value.filter((item) => item.category === category).length; }
 function sourceIcon(type) { return ({ signal: 'activity', rate: 'money', catalog: 'package', history: 'chart' })[type] || 'database'; }
-function resetFilters() { Object.assign(filters, { keyword: '', category: '全部', minHeat: '', minProfit: '', maxCost: '', sortBy: 'rank' }); }
+function resetFilters() { Object.assign(filters, { keyword: '', category: 'All', minHeat: '', minProfit: '', maxCost: '', sortBy: 'rank' }); }
 onMounted(load);
 </script>

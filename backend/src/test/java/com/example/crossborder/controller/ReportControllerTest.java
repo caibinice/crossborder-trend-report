@@ -20,14 +20,14 @@ class ReportControllerTest {
     @Test
     void readingAnEmptyLatestReportDoesNotTriggerCollection() {
         TrendReportService reports = mock(TrendReportService.class);
-        when(reports.latest()).thenReturn(Optional.empty());
+        when(reports.latest("jp")).thenReturn(Optional.empty());
         ReportController controller = new ReportController(
             reports,
             mock(ExternalDataSourceService.class),
             mock(AdminAuthService.class)
         );
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, controller::latest);
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> controller.latest("jp"));
 
         assertEquals(404, exception.getStatusCode().value());
         verify(reports, never()).collect(LocalDate.now());
@@ -48,5 +48,22 @@ class ReportControllerTest {
         );
 
         assertEquals(401, exception.getStatusCode().value());
+    }
+
+    @Test
+    void collectionPassesTheSelectedMarketToTheReportService() {
+        AdminAuthService auth = mock(AdminAuthService.class);
+        TrendReportService reports = mock(TrendReportService.class);
+        when(auth.authorized("Bearer action-token")).thenReturn(true);
+        ReportController controller = new ReportController(
+            reports,
+            mock(ExternalDataSourceService.class),
+            auth
+        );
+
+        LocalDate date = LocalDate.of(2026, 7, 31);
+        controller.run("Bearer action-token", new RunCollectRequest(date, true, "sea"));
+
+        verify(reports).collect(date, "sea", true);
     }
 }

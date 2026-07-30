@@ -18,9 +18,9 @@ import org.junit.jupiter.api.Test;
 
 class DomesticSearchServiceTest {
     @Test
-    void replacesJapaneseKeywordsWithChineseNameAndUsesConfiguredSites() {
+    void replacesJapaneseKeywordsWithEnglishNameAndUsesConfiguredSites() {
         TrendCandidate candidate = new TrendCandidate(
-            "玩具", "おもちゃ収納", "儿童玩具收纳盒", "おもちゃ 人気", "Rakuten Ichiba",
+            "Toys", "おもちゃ収納", "Kids toy storage box", "おもちゃ 人気", "Rakuten Ichiba",
             "https://example.com", null, 80, 10, 20, 70, new BigDecimal("1000"), "JPY", "测试"
         );
 
@@ -32,9 +32,9 @@ class DomesticSearchServiceTest {
         assertEquals(1, links.size());
         Charset gb18030 = Charset.forName("GB18030");
         String decoded = URLDecoder.decode(links.get(0).url(), gb18030);
-        assertTrue(decoded.contains("儿童玩具收纳盒"));
+        assertTrue(decoded.contains("Kids toy storage box"));
         assertFalse(decoded.contains("おもちゃ"));
-        assertTrue(links.get(0).url().contains(URLEncoder.encode("儿童玩具收纳盒", gb18030)));
+        assertTrue(links.get(0).url().contains(URLEncoder.encode("Kids toy storage box", gb18030)));
         assertTrue(links.get(0).note().contains("GB18030/GBK"));
     }
 

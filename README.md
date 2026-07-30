@@ -16,11 +16,11 @@
 - 独立后台：`/admin`
 - 后台菜单：用户管理、角色管理、菜单管理、数据源配置、市场配置、品类配置、采集频率配置、日报记录、商品池
 - 后台支持登录、主动注销、会话过期回登录页及登录/注销审计；开发模式可直接进入，但主动注销后仍需重新登录。
-- Google Trends、Frankfurter 和 WooCommerce 公共目录开箱即用；Yahoo Japan（高评价趋势榜 + 商品搜索）、Rakuten、Rainforest 配凭证即接入
+- 日本、美国、东南亚三市场均已接入 Google Trends、Frankfurter 和独立 WooCommerce 公共目录；Yahoo Japan（高评价趋势榜 + 商品搜索）、Rakuten、Rainforest 配凭证后增强日本市场
 - 前后台统一 Apple 风格设计系统，支持浅色/深色主题和移动端抽屉；弹窗始终限制在视口内滚动
 - 生产管理员账号为 `admin`，密码仅由忽略的部署环境
   `FIXED_ADMIN_PASSWORD` 注入，不在仓库中提供默认值。
-- 后端支持默认 10 个品类 × 每类 10 件的动态配额、来源均衡选取、幂等日报、多币种换算、DeepSeek V4 Pro Thinking high 翻译/评估和采集运行审计
+- 后端支持三个市场各自的幂等日报，默认 10 个英文品类 × 每类 20 件（每市场最多 200 件）、来源均衡选取、多币种换算、DeepSeek V4 Pro Thinking high 英文标准化/评估和采集运行审计
 
 ## 目录说明
 
@@ -70,6 +70,14 @@ Thinking 并使用 `reasoning_effort=high`；真实 Token 只放
 `credentials.txt`。后台 **选品配置 → 参数配置** 可以修改品类数、每类
 商品数、销量/销售额筛选口径，以及 `名称|含 {keyword} 的 URL` 格式的
 1688、淘宝、拼多多等采购站点。
+
+无需凭证的公共商品目录按市场独立配置：
+
+```env
+WOOCOMMERCE_STORE_URLS=https://www.somethingfromjapan.com
+WOOCOMMERCE_US_STORE_URLS=https://thompsonhanson.com,https://helloyumi.com
+WOOCOMMERCE_SEA_STORE_URLS=https://watchexchange.sg,https://publico.sg
+```
 
 `.env` 只放非敏感开关，例如：
 
@@ -219,7 +227,7 @@ chunk 做保守混淆。混淆不包含密钥，也不能代替 JWT 鉴权。
 
 - Google Trends RSS：JP / US / SG 搜索趋势
 - Frankfurter：JPY / USD 等币种兑 CNY 的公共参考汇率
-- WooCommerce Store API：公开商品、价格、图片、类目和热销排序
+- WooCommerce Store API：按 JP / US / SEA 分开的公开商品、价格、图片、类目和热销排序；接口无需 API Key
 
 配置凭证后可用：
 

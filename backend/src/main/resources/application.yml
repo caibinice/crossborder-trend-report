@@ -37,7 +37,7 @@ app:
     exchange-rate-jpy-cny: ${JPY_CNY_RATE:0.048}
     default-shipping-cny: ${DEFAULT_SHIPPING_CNY:18}
     source-mode: ${SOURCE_MODE:external}
-    max-products: ${MAX_PRODUCTS:20}
+    max-products: ${MAX_PRODUCTS:200}
     platform-fee-rate: ${PLATFORM_FEE_RATE:0.12}
     payment-fee-rate: ${PAYMENT_FEE_RATE:0.03}
     tax-rate: ${TAX_RATE:0}
@@ -55,6 +55,8 @@ app:
     frankfurter-enabled: ${FRANKFURTER_ENABLED:true}
     woocommerce-enabled: ${WOOCOMMERCE_ENABLED:true}
     woocommerce-store-urls: ${WOOCOMMERCE_STORE_URLS:https://www.somethingfromjapan.com}
+    woocommerce-us-store-urls: ${WOOCOMMERCE_US_STORE_URLS:https://thompsonhanson.com,https://helloyumi.com}
+    woocommerce-sea-store-urls: ${WOOCOMMERCE_SEA_STORE_URLS:https://watchexchange.sg,https://publico.sg}
     tiktok-mode: ${TIKTOK_MODE:demo}
     apify-token: ${APIFY_TOKEN:}
     apify-tik-tok-actor: ${APIFY_TIKTOK_ACTOR:clockworks/tiktok-scraper}

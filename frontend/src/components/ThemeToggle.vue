@@ -1,5 +1,5 @@
 <template>
-  <button class="icon-button theme-toggle" type="button" :title="theme === 'dark' ? '切换浅色模式' : '切换深色模式'" :aria-label="theme === 'dark' ? '切换浅色模式' : '切换深色模式'" @click="toggleTheme">
+  <button class="icon-button theme-toggle" type="button" :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'" :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
     <AppIcon :name="theme === 'dark' ? 'sun' : 'moon'" />
   </button>
 </template>
