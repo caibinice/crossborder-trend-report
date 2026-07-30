@@ -51,7 +51,7 @@ class AdminSettingsRepositoryTest {
     }
 
     @Test
-    void createDefaultIfMissing_shouldSeedThreeMarketsAndTwentyProductsPerCategory() {
+    void createDefaultIfMissing_shouldKeepJapanDefaultsAndSeedTwentyProductsPerCategory() {
         repository.createDefaultIfMissing("default");
         AdminSettings settings = jdbcTemplate.queryForObject(
             "SELECT * FROM admin_settings WHERE tenant_id = ?",
@@ -71,10 +71,10 @@ class AdminSettingsRepositoryTest {
             "default"
         );
 
-        assertIterableEquals(List.of("WooCommerce Public Catalog", "Google Trends", "Yahoo Shopping", "Rakuten"), settings.foreignSources());
-        assertIterableEquals(List.of("1688", "Taobao", "Pinduoduo"), settings.domesticSources());
-        assertIterableEquals(List.of("Toys", "Home & Living", "Beauty", "Pet Supplies", "Electronics", "Outdoors", "Baby", "Kitchen", "Fashion", "Food"), settings.categories());
-        assertIterableEquals(List.of("Japan", "United States", "Southeast Asia"), settings.regions());
+        assertIterableEquals(List.of("WooCommerce公开目录", "Google Trends", "Yahoo Shopping", "Rakuten"), settings.foreignSources());
+        assertIterableEquals(List.of("1688", "淘宝", "拼多多"), settings.domesticSources());
+        assertIterableEquals(List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "厨房", "服饰", "食品"), settings.categories());
+        assertIterableEquals(List.of("日本", "United States", "Southeast Asia"), settings.regions());
         assertEquals("0 30 8 * * *", settings.frequencyCron());
         assertEquals(200, settings.maxProducts());
         assertEquals(10, settings.maxCategories());

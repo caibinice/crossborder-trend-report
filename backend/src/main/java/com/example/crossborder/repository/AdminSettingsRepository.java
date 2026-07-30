@@ -93,9 +93,9 @@ public class AdminSettingsRepository {
                   frequency_cron, max_products, max_categories, products_per_category, ranking_metric,
                   jpy_cny_rate, auto_exchange_rate, default_shipping_cny, smart_mode
                 ) VALUES(
-                  ?, ?, 'WooCommerce Public Catalog,Google Trends,Yahoo Shopping,Rakuten', '1688,Taobao,Pinduoduo',
-                  'Toys,Home & Living,Beauty,Pet Supplies,Electronics,Outdoors,Baby,Kitchen,Fashion,Food',
-                  'Japan,United States,Southeast Asia', 'external', '0 30 8 * * *', 200, 10, 20, 'sales_volume',
+                  ?, ?, 'WooCommerce公开目录,Google Trends,Yahoo Shopping,Rakuten', '1688,淘宝,拼多多',
+                  '玩具,家居,美妆,宠物,数码,户外,母婴,厨房,服饰,食品',
+                  '日本,United States,Southeast Asia', 'external', '0 30 8 * * *', 200, 10, 20, 'sales_volume',
                   0.048, true, 18, true
                 )
                 """,
@@ -149,8 +149,8 @@ public class AdminSettingsRepository {
     private List<SupplierSiteConfig> supplierSites(String value) {
         String configured = value == null || value.isBlank()
             ? "1688|https://s.1688.com/selloffer/offer_search.htm?keywords={keyword}\n"
-                + "Taobao|https://s.taobao.com/search?q={keyword}\n"
-                + "Pinduoduo|https://mobile.yangkeduo.com/search_result.html?search_key={keyword}"
+                + "淘宝|https://s.taobao.com/search?q={keyword}\n"
+                + "拼多多|https://mobile.yangkeduo.com/search_result.html?search_key={keyword}"
             : value;
         return configured.lines()
             .map(String::trim)

@@ -56,7 +56,7 @@ public class ExternalTrendDataSource implements TrendDataSource {
             if (enabled(settings, "rainforest", "amazon")) addSafely(candidates, "Rainforest", () -> rainforest.fetch(settings));
         }
         List<TrendCandidate> unique = deduplicate(candidates);
-        return ranking.rank(enrichment.enrich(unique, settings));
+        return ranking.rank(enrichment.enrich(unique, settings, market));
     }
 
     public List<TrendCandidate> preview(String sourceKey, AdminSettings settings) {

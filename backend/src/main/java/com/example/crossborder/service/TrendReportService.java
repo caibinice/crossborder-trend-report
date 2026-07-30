@@ -108,7 +108,9 @@ public class TrendReportService {
         }
         if (force) repository.deleteByDateAndSourceKey(date, sourceKey);
         long reportId = repository.createReport(
-            date, sourceKey, draft.sourceMode(), market.name() + " Cross-border Product Report " + date, draft.summary()
+            date, sourceKey, draft.sourceMode(),
+            market.english() ? market.name() + " Cross-border Product Report " + date : "日本市场跨境热品日报 " + date,
+            draft.summary()
         );
         int rank = 1;
         for (ProductDraft product : draft.products()) {
@@ -130,13 +132,15 @@ public class TrendReportService {
             ? List.of()
             : externalSource.fetch(date, settings, market.key());
         List<TrendCandidate> rawCandidates = switch (sourceMode) {
-            case "external" -> requireExternal(external);
+            case "external" -> requireExternal(external, market);
             case "mixed" -> merge(demoSource.fetch(date), external);
             default -> demoSource.fetch(date);
         };
-        List<TrendCandidate> candidates = selectCandidates(rawCandidates, settings);
+        List<TrendCandidate> candidates = selectCandidates(rawCandidates, settings, market.key());
         if (candidates.isEmpty()) {
-            throw new ApiConflictException("数据源返回了商品，但全部被后台品类配置过滤；请调整品类后重试");
+            throw new ApiConflictException(market.english()
+                ? "The sources returned products, but all were removed by the configured categories. Update category settings and retry."
+                : "数据源返回了商品，但全部被后台品类配置过滤；请调整品类后重试");
         }
 
         Map<String, BigDecimal> currencyRates = new HashMap<>();
@@ -147,7 +151,7 @@ public class TrendReportService {
                 key -> exchangeRates.resolveToCny(key, settings.jpyCnyRate(), settings.autoExchangeRate()));
             BigDecimal sourcePrice = nonNull(candidate.sourcePrice());
             BigDecimal sourceCny = sourcePrice.multiply(rate).setScale(2, RoundingMode.HALF_UP);
-            List<DomesticLink> links = domestic.search(candidate, sourceCny, settings.supplierSites());
+            List<DomesticLink> links = domestic.search(candidate, sourceCny, settings.supplierSites(), market.key());
             BigDecimal cost = links.stream().map(DomesticLink::priceCny).min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
             BigDecimal platformFee = sourceCny.multiply(value(properties.platformFeeRate()));
             BigDecimal paymentFee = sourceCny.multiply(value(properties.paymentFeeRate()));
@@ -165,16 +169,23 @@ public class TrendReportService {
         }
         long realCount = products.stream().filter(product -> !product.sourcePlatform().toLowerCase(Locale.ROOT).contains("demo")).count();
         String displayMode = products.stream().map(ProductDraft::sourcePlatform).distinct().sorted().reduce((a, b) -> a + " + " + b).orElse(sourceMode);
-        String summary = "Collected " + products.size() + " products for " + market.name() + ": " + realCount
-            + " from live catalogs and " + (products.size() - realCount) + " demo products. Sources: " + displayMode
-            + ". Candidates were selected by "
-            + ("sales_amount".equals(settings.rankingMetric()) ? "sales-value proxy" : "sales-volume proxy")
-            + " and displayed by composite heat. Currencies: " + String.join("/", currencyRates.keySet()) + ".";
+        String summary = market.english()
+            ? "Collected " + products.size() + " products for " + market.name() + ": " + realCount
+                + " from live catalogs and " + (products.size() - realCount) + " demo products. Sources: " + displayMode
+                + ". Candidates were selected by "
+                + ("sales_amount".equals(settings.rankingMetric()) ? "sales-value proxy" : "sales-volume proxy")
+                + " and displayed by composite heat. Currencies: " + String.join("/", currencyRates.keySet()) + "."
+            : "本次采集 " + products.size() + " 个商品，其中真实目录 " + realCount + " 个、演示 "
+                + (products.size() - realCount) + " 个；来源=" + displayMode + "；按"
+                + ("sales_amount".equals(settings.rankingMetric()) ? "销售额指数" : "销量指数")
+                + "筛选，按综合热度倒序；币种=" + String.join("/", currencyRates.keySet()) + "。";
         return new ReportDraft(displayMode, summary, products);
     }
 
-    private List<TrendCandidate> selectCandidates(List<TrendCandidate> rawCandidates, AdminSettings settings) {
-        List<String> configured = settings.categories() == null ? List.of() : settings.categories().stream()
+    private List<TrendCandidate> selectCandidates(
+        List<TrendCandidate> rawCandidates, AdminSettings settings, String marketKey
+    ) {
+        List<String> configured = MarketCatalog.categories(settings.categories(), marketKey).stream()
             .limit(Math.max(1, settings.maxCategories())).toList();
         int perCategory = Math.max(1, settings.productsPerCategory());
         int totalLimit = Math.min(Math.max(1, settings.maxProducts()), Math.max(1, configured.size()) * perCategory);
@@ -220,9 +231,11 @@ public class TrendReportService {
             .thenComparing(TrendCandidate::productNameJp);
     }
 
-    private List<TrendCandidate> requireExternal(List<TrendCandidate> external) {
+    private List<TrendCandidate> requireExternal(List<TrendCandidate> external, MarketCatalog.Market market) {
         if (external.isEmpty()) {
-            throw new ApiConflictException("真实商品源未配置或均采集失败。请到后台数据源配置测试连接；系统不会在 external 模式下静默回退 Demo。");
+            throw new ApiConflictException(market.english()
+                ? "No live catalog source is configured or all sources failed. Check Data Sources in Admin; external mode never falls back to demo data."
+                : "真实商品源未配置或均采集失败。请到后台数据源配置测试连接；系统不会在 external 模式下静默回退 Demo。");
         }
         return external;
     }

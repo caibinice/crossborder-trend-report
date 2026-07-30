@@ -34,10 +34,35 @@ class WooCommerceTrendSourceTest {
         assertEquals(1, candidates.size());
         TrendCandidate candidate = candidates.get(0);
         assertEquals("Matcha & Chocolate Gift", candidate.productNameJp());
-        assertEquals("Food", candidate.category());
+        assertEquals("食品", candidate.category());
         assertEquals("USD", candidate.sourceCurrency());
         assertEquals(0, new BigDecimal("12.99").compareTo(candidate.sourcePrice()));
         assertEquals("https://shop.test/matcha.jpg", candidate.imageUrl());
+        assertTrue(candidate.reason().contains("评论=23"));
+    }
+
+    @Test
+    void parsesUnitedStatesCatalogInEnglish() {
+        String response = """
+            [{
+              "name":"Matcha &amp; Chocolate Gift",
+              "permalink":"https://shop.test/product/matcha",
+              "short_description":"<p>Popular snack box.</p>",
+              "average_rating":"4.7",
+              "review_count":23,
+              "prices":{"price":"1299","currency_code":"USD","currency_minor_unit":2},
+              "categories":[{"name":"Food"}],
+              "images":[{"src":"https://shop.test/matcha.jpg"}]
+            }]
+            """;
+        WooCommerceTrendSource source = new WooCommerceTrendSource(
+            mock(ExternalDataSourceService.class), new ObjectMapper()
+        );
+
+        TrendCandidate candidate = source.parse(response, "https://shop.test", "us").get(0);
+
+        assertEquals("Food", candidate.category());
+        assertEquals("WooCommerce US / shop.test", candidate.sourcePlatform());
         assertTrue(candidate.reason().contains("reviews=23"));
     }
 }

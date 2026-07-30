@@ -16,44 +16,81 @@ public class DomesticSearchService {
     public List<DomesticLink> search(
         TrendCandidate candidate, BigDecimal sourcePriceCny, List<SupplierSiteConfig> configuredSites
     ) {
+        return search(candidate, sourcePriceCny, configuredSites, "jp");
+    }
+
+    public List<DomesticLink> search(
+        TrendCandidate candidate, BigDecimal sourcePriceCny, List<SupplierSiteConfig> configuredSites, String marketKey
+    ) {
+        boolean english = MarketCatalog.get(marketKey).english();
         BigDecimal base = estimate(candidate.category(), sourcePriceCny);
-        String query = procurementQuery(candidate);
+        String query = procurementQuery(candidate, marketKey);
         List<SupplierSiteConfig> sites = configuredSites == null || configuredSites.isEmpty()
-            ? defaultSites()
+            ? defaultSites(english)
             : configuredSites;
         List<DomesticLink> links = new ArrayList<>();
         for (SupplierSiteConfig site : sites) {
             String encoded = SupplierSearchUrlCodec.encodeKeyword(site, query);
             BigDecimal price = base.multiply(multiplier(site.name())).setScale(2, RoundingMode.HALF_UP);
+            String platform = english ? englishPlatform(site.name()) : site.name();
             links.add(new DomesticLink(
-                0, 0, site.name(), query + " - " + site.name() + " search",
+                0, 0, platform, english ? query + " - " + platform + " search" : query + " - " + platform + "搜索",
                 site.urlTemplate().replace("{keyword}", encoded), price,
-                "Searches for \"" + query + "\" using " + SupplierSearchUrlCodec.encodingLabel(site)
-                    + " encoding. Price is an estimate; verify the current supplier quote."
+                english
+                    ? "Searches for \"" + query + "\" using " + SupplierSearchUrlCodec.encodingLabel(site)
+                        + " encoding. Price is an estimate; verify the current supplier quote."
+                    : "使用 " + SupplierSearchUrlCodec.encodingLabel(site) + " 中文采购词“" + query
+                        + "”跳转搜索；价格为估算，需以平台实时报价为准。"
             ));
         }
         return List.copyOf(links);
     }
 
     String procurementQuery(TrendCandidate candidate) {
-        String keywords = clean(candidate.keywords());
-        if (isEnglish(keywords)) return abbreviate(keywords, 80);
-        String englishName = clean(candidate.productNameCn());
-        if (isEnglish(englishName)) return abbreviate(englishName, 80);
-        String category = clean(candidate.category());
-        return isEnglish(category) ? category + " trending product" : "Cross-border trending product";
+        return procurementQuery(candidate, "jp");
     }
 
-    private List<SupplierSiteConfig> defaultSites() {
+    String procurementQuery(TrendCandidate candidate, String marketKey) {
+        if (MarketCatalog.get(marketKey).english()) {
+            String keywords = clean(candidate.keywords());
+            if (isEnglish(keywords)) return abbreviate(keywords, 80);
+            String englishName = clean(candidate.productNameCn());
+            if (isEnglish(englishName)) return abbreviate(englishName, 80);
+            String category = clean(candidate.category());
+            return isEnglish(category) ? category + " trending product" : "Cross-border trending product";
+        }
+        String keywords = clean(candidate.keywords());
+        if (isChinese(keywords)) return abbreviate(keywords, 80);
+        String chineseName = clean(candidate.productNameCn());
+        if (isChinese(chineseName)) return abbreviate(chineseName, 80);
+        String category = clean(candidate.category());
+        return category.isBlank() ? "跨境热销商品" : category + " 热销商品";
+    }
+
+    private List<SupplierSiteConfig> defaultSites(boolean english) {
         return List.of(
             new SupplierSiteConfig("1688", "https://s.1688.com/selloffer/offer_search.htm?keywords={keyword}"),
-            new SupplierSiteConfig("Taobao", "https://s.taobao.com/search?q={keyword}"),
-            new SupplierSiteConfig("Pinduoduo", "https://mobile.yangkeduo.com/search_result.html?search_key={keyword}")
+            new SupplierSiteConfig(english ? "Taobao" : "淘宝", "https://s.taobao.com/search?q={keyword}"),
+            new SupplierSiteConfig(english ? "Pinduoduo" : "拼多多", "https://mobile.yangkeduo.com/search_result.html?search_key={keyword}")
         );
+    }
+
+    private String englishPlatform(String value) {
+        if ("淘宝".equals(value)) return "Taobao";
+        if ("拼多多".equals(value)) return "Pinduoduo";
+        return value;
     }
 
     private boolean isEnglish(String value) {
         return value != null && !value.isBlank() && value.matches(".*[A-Za-z].*");
+    }
+
+    private boolean containsJapaneseKana(String value) {
+        return value.matches(".*[\\p{InHiragana}\\p{InKatakana}].*");
+    }
+
+    private boolean isChinese(String value) {
+        return value != null && !value.isBlank() && !containsJapaneseKana(value) && value.matches(".*[\\p{IsHan}].*");
     }
 
     private String clean(String value) {

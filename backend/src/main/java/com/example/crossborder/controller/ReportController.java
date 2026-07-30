@@ -46,8 +46,8 @@ public class ReportController {
     }
 
     @GetMapping("/datasources")
-    public List<DataSourceStatus> datasources() {
-        return sources.statuses();
+    public List<DataSourceStatus> datasources(@RequestParam(defaultValue = "jp") String marketKey) {
+        return sources.statuses(marketKey);
     }
 
     /** Kept for compatibility. New screens use the lightweight summaries endpoint. */
@@ -71,7 +71,10 @@ public class ReportController {
 
     @GetMapping("/reports/latest")
     public TrendReport latest(@RequestParam(defaultValue = "jp") String marketKey) {
-        return reports.latest(marketKey).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No report is available yet"));
+        return reports.latest(marketKey).orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "jp".equalsIgnoreCase(marketKey) ? "暂无日报，请先手动生成" : "No report is available yet"
+        ));
     }
 
     @GetMapping("/reports/{id}")
@@ -88,7 +91,10 @@ public class ReportController {
         @RequestParam(defaultValue = "jp") String marketKey
     ) {
         return reports.byDate(date, marketKey)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No report is available for that market and date"));
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "jp".equalsIgnoreCase(marketKey) ? "该日期暂无日报，请手动生成" : "No report is available for that market and date"
+            ));
     }
 
     @PostMapping("/collect/run")

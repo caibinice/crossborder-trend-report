@@ -19,12 +19,12 @@ export async function api(path, options = {}) {
   try {
     response = await fetch(`${API}${path}`, { ...options, headers });
   } catch (error) {
-    throw new ApiError('Network connection failed. Confirm that both services are running.', 0, error);
+    throw new ApiError('网络连接失败，请确认前后端服务已启动', 0, error);
   }
   const text = await response.text();
   let payload = null;
   try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
-  if (!response.ok) throw new ApiError(payload?.message || payload?.detail || text || `Request failed (${response.status})`, response.status, payload);
+  if (!response.ok) throw new ApiError(payload?.message || payload?.detail || text || `请求失败（${response.status}）`, response.status, payload);
   return payload;
 }
 
@@ -33,11 +33,11 @@ export function money(value, unit = CNY) {
   return `${unit}${Number(value).toFixed(2)}`;
 }
 
-export function currencyMoney(value, currency = 'CNY') {
+export function currencyMoney(value, currency = 'CNY', locale = 'zh-CN') {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
   const code = /^[A-Z]{3}$/.test(currency || '') ? currency : 'CNY';
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: code, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value));
+    return new Intl.NumberFormat(locale, { style: 'currency', currency: code, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value));
   } catch {
     return `${code} ${Number(value).toFixed(2)}`;
   }
@@ -47,23 +47,23 @@ export function pct(value) {
   return `${(Number(value || 0) * 100).toFixed(1)}%`;
 }
 
-export function regionOf(product) {
+export function regionOf(product, english = false) {
   const source = `${product.sourcePlatform || ''} ${product.sourceUrl || ''}`.toLowerCase();
-  if (source.match(/\bsea\b|singapore|\.sg\b/)) return 'Southeast Asia';
-  if (source.match(/\bus\b|united states|\.com\b/) && !source.match(/jp|japan|co\.jp/)) return 'United States';
-  if (source.match(/jp|japan|co\.jp|rakuten|yahoo/)) return 'Japan';
-  return 'Unknown';
+  if (source.match(/\bsea\b|singapore|\.sg\b/)) return english ? 'Southeast Asia' : '东南亚';
+  if (source.match(/jp|japan|co\.jp|rakuten|yahoo|tiktok/)) return english ? 'Japan' : '日本';
+  if (source.match(/\bus\b|united states|\.com\b/) && !source.match(/jp|japan|co\.jp/)) return english ? 'United States' : '美国';
+  return english ? 'Unknown' : '未知';
 }
 
 export function isDemoProduct(product) {
   return `${product?.sourcePlatform || ''}`.toLowerCase().includes('demo');
 }
 
-export function formatDateTime(value) {
+export function formatDateTime(value, locale = 'zh-CN') {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale, {
     month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(date);
 }

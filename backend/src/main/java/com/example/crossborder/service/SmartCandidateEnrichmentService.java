@@ -31,15 +31,25 @@ public class SmartCandidateEnrichmentService {
     }
 
     public List<TrendCandidate> enrich(List<TrendCandidate> candidates, AdminSettings settings) {
+        return enrich(candidates, settings, "jp");
+    }
+
+    public List<TrendCandidate> enrich(
+        List<TrendCandidate> candidates, AdminSettings settings, String marketKey
+    ) {
         if (candidates.isEmpty()) return candidates;
+        MarketCatalog.Market market = MarketCatalog.get(marketKey);
+        List<String> categories = MarketCatalog.categories(settings.categories(), market.key());
         List<TrendCandidate> output = new ArrayList<>(candidates);
         if (settings.smartMode() && external.aiConfigured()) {
             int batchSize = 25;
             for (int offset = 0; offset < output.size(); offset += batchSize) {
-                enrichSafely(output, offset, Math.min(offset + batchSize, output.size()), settings.categories());
+                enrichSafely(output, offset, Math.min(offset + batchSize, output.size()), categories, market.english());
             }
         }
-        return output.stream().map(this::ensureEnglishFallback).toList();
+        return output.stream()
+            .map(item -> market.english() ? ensureEnglishFallback(item) : ensureChineseFallback(item))
+            .toList();
     }
 
     public SourceTestResult test() {
@@ -70,7 +80,9 @@ public class SmartCandidateEnrichmentService {
         }
     }
 
-    private void enrichBatch(List<TrendCandidate> output, int start, int end, List<String> categories) {
+    private void enrichBatch(
+        List<TrendCandidate> output, int start, int end, List<String> categories, boolean english
+    ) {
         try {
             List<Map<String, Object>> sourceItems = new ArrayList<>();
             for (int index = start; index < end; index++) {
@@ -86,14 +98,21 @@ public class SmartCandidateEnrichmentService {
                 source.put("evidence", item.reason());
                 sourceItems.add(source);
             }
-            String categoryText = String.join(", ", categories == null ? List.of() : categories);
-            String system = "You normalize and evaluate cross-border ecommerce products. Use only the supplied title, source, price, and evidence; "
-                + "never invent actual sales volume or revenue. Return strict JSON "
-                + "{\"items\":[{\"index\":0,\"nameEn\":\"\",\"category\":\"\",\"keywords\":\"\",\"reason\":\"\",\"aiScore\":50}]}. "
-                + "nameEn must be a concise English product name; category must be one of: " + categoryText
-                + ". keywords must contain 2-4 concise English sourcing terms. "
-                + "aiScore must be 1-100 and reflect demand breadth, differentiation, shipping suitability, and evidence quality. "
-                + "reason must be English, no more than 120 characters, and preserve any supplied rank, review, or rating facts.";
+            String categoryText = String.join(english ? ", " : "、", categories == null ? List.of() : categories);
+            String system = english
+                ? "You normalize and evaluate cross-border ecommerce products. Use only the supplied title, source, price, and evidence; "
+                    + "never invent actual sales volume or revenue. Return strict JSON "
+                    + "{\"items\":[{\"index\":0,\"nameEn\":\"\",\"category\":\"\",\"keywords\":\"\",\"reason\":\"\",\"aiScore\":50}]}. "
+                    + "nameEn must be a concise English product name; category must be one of: " + categoryText
+                    + ". keywords must contain 2-4 concise English sourcing terms. "
+                    + "aiScore must be 1-100 and reflect demand breadth, differentiation, shipping suitability, and evidence quality. "
+                    + "reason must be English, no more than 120 characters, and preserve any supplied rank, review, or rating facts."
+                : "你是跨境电商商品翻译与选品评估器。只根据输入标题、来源、价格和证据评估，不编造真实销量或销售额。"
+                    + "返回严格 JSON 对象 {\"items\":[{\"index\":0,\"nameCn\":\"\",\"category\":\"\",\"keywords\":\"\",\"reason\":\"\",\"aiScore\":50}]}。"
+                    + "nameCn 必须是简洁的简体中文商品名，不得包含日文假名；category 必须从这些品类选择：" + categoryText
+                    + "；keywords 必须是 2-4 个简体中文采购搜索词，不得出现日文假名；"
+                    + "aiScore 为 1-100 的跨境销售潜力评分，综合需求普适性、差异化、物流友好度和证据质量；"
+                    + "reason 不超过 80 字，明确说明评分依据并保留输入中的排名、评论或评分事实。";
             String user = json.writeValueAsString(Map.of("items", sourceItems));
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("model", value(properties.model(), "deepseek-v4-pro"));
@@ -126,10 +145,14 @@ public class SmartCandidateEnrichmentService {
                 // The source adapter already queried a configured category. AI may improve names and
                 // procurement terms, but reclassification would break the configured per-category quota.
                 String category = original.category();
-                String nameEn = englishText(enriched.path("nameEn").asText(""), original.productNameCn(), category + " trending product");
-                String keywords = englishText(enriched.path("keywords").asText(""), nameEn, category);
+                String displayName = english
+                    ? englishText(enriched.path("nameEn").asText(""), original.productNameCn(), category + " trending product")
+                    : chineseText(enriched.path("nameCn").asText(""), original.productNameCn(), category + "热销商品");
+                String keywords = english
+                    ? englishText(enriched.path("keywords").asText(""), displayName, category)
+                    : chineseText(enriched.path("keywords").asText(""), displayName, category);
                 output.set(index, new TrendCandidate(
-                    category, original.productNameJp(), nameEn, keywords,
+                    category, original.productNameJp(), displayName, keywords,
                     original.sourcePlatform(), original.sourceUrl(), original.imageUrl(), original.heatScore(),
                     original.salesVolumeScore(), original.salesAmountScore(), score(enriched.path("aiScore"), original.aiScore()),
                     original.sourcePrice(), original.sourceCurrency(), text(enriched, "reason", original.reason())
@@ -140,18 +163,36 @@ public class SmartCandidateEnrichmentService {
         }
     }
 
-    private void enrichSafely(List<TrendCandidate> output, int start, int end, List<String> categories) {
+    private void enrichSafely(
+        List<TrendCandidate> output, int start, int end, List<String> categories, boolean english
+    ) {
         try {
-            enrichBatch(output, start, end, categories);
+            enrichBatch(output, start, end, categories, english);
         } catch (RuntimeException exception) {
             if (end - start > 6) {
                 int middle = start + (end - start) / 2;
-                enrichSafely(output, start, middle, categories);
-                enrichSafely(output, middle, end, categories);
+                enrichSafely(output, start, middle, categories, english);
+                enrichSafely(output, middle, end, categories, english);
                 return;
             }
-            log.warn("AI product normalization failed; {} products use English fallbacks: {}", end - start, rootMessage(exception));
+            if (english) {
+                log.warn("AI product normalization failed; {} products use English fallbacks: {}", end - start, rootMessage(exception));
+            } else {
+                log.warn("AI 商品翻译评分失败，{} 条商品使用中文品类兜底: {}", end - start, rootMessage(exception));
+            }
         }
+    }
+
+    private TrendCandidate ensureChineseFallback(TrendCandidate original) {
+        String category = original.category() == null || original.category().isBlank() ? "跨境" : original.category().trim();
+        String nameCn = chineseText(original.productNameCn(), "", category + "热销商品");
+        String keywords = chineseText(original.keywords(), nameCn, category + " 热销商品");
+        if (nameCn.equals(original.productNameCn()) && keywords.equals(original.keywords())) return original;
+        return new TrendCandidate(
+            original.category(), original.productNameJp(), nameCn, keywords, original.sourcePlatform(), original.sourceUrl(),
+            original.imageUrl(), original.heatScore(), original.salesVolumeScore(), original.salesAmountScore(), original.aiScore(),
+            original.sourcePrice(), original.sourceCurrency(), original.reason()
+        );
     }
 
     private TrendCandidate ensureEnglishFallback(TrendCandidate original) {
@@ -189,6 +230,23 @@ public class SmartCandidateEnrichmentService {
 
     private boolean isEnglishText(String value) {
         return value != null && !value.isBlank() && value.matches(".*[A-Za-z].*");
+    }
+
+    private String chineseText(String candidate, String fallback, String finalFallback) {
+        String value = candidate == null ? "" : candidate.replaceAll("\\s+", " ").trim();
+        if (isChineseSearchText(value)) return abbreviate(value, 120);
+        String second = fallback == null ? "" : fallback.replaceAll("\\s+", " ").trim();
+        if (isChineseSearchText(second)) return abbreviate(second, 120);
+        return finalFallback;
+    }
+
+    private boolean isChineseSearchText(String value) {
+        return value != null && !value.isBlank() && !containsJapaneseKana(value)
+            && value.matches(".*[\\p{IsHan}].*");
+    }
+
+    private boolean containsJapaneseKana(String value) {
+        return value.matches(".*[\\p{InHiragana}\\p{InKatakana}].*");
     }
 
     private double score(JsonNode node, double fallback) {

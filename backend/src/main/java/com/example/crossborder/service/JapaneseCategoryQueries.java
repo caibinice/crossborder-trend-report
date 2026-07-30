@@ -4,19 +4,6 @@ import java.util.Map;
 
 final class JapaneseCategoryQueries {
     private static final Map<String, String> QUERIES = Map.ofEntries(
-        Map.entry("Toys", "おもちゃ 人気"),
-        Map.entry("Home & Living", "収納 便利グッズ"),
-        Map.entry("Beauty", "美容 コスメ"),
-        Map.entry("Pet Supplies", "ペット用品"),
-        Map.entry("Electronics", "スマホ デジタル"),
-        Map.entry("Outdoors", "アウトドア キャンプ"),
-        Map.entry("Baby", "ベビー用品"),
-        Map.entry("Kitchen", "キッチン 便利グッズ"),
-        Map.entry("Fashion", "ファッション 小物"),
-        Map.entry("Food", "お菓子 人気"),
-        Map.entry("Automotive", "車 便利グッズ"),
-        Map.entry("Stationery", "文房具"),
-        Map.entry("Health", "健康グッズ"),
         Map.entry("玩具", "おもちゃ 人気"),
         Map.entry("家居", "収納 便利グッズ"),
         Map.entry("美妆", "美容 コスメ"),

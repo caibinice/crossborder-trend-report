@@ -48,8 +48,7 @@ public class RainforestTrendSource {
                     category, title, title, JapaneseCategoryQueries.forCategory(category), "Amazon JP / Rainforest",
                     product.path("link").asText(""), product.path("image").asText(null), Math.min(100, score),
                     volumeSignal, amountSignal, 50D, price, "JPY",
-                    "Amazon search rank #" + product.path("position").asInt(0)
-                        + "; reviews=" + product.path("ratings_total").asLong(0) + "."
+                    "Amazon 搜索排名=" + product.path("position").asInt(0) + "，评论=" + product.path("ratings_total").asLong(0) + "。"
                 ));
             }
             return candidates;

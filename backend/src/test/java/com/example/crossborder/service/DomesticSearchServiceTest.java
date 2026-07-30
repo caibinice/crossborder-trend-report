@@ -18,9 +18,9 @@ import org.junit.jupiter.api.Test;
 
 class DomesticSearchServiceTest {
     @Test
-    void replacesJapaneseKeywordsWithEnglishNameAndUsesConfiguredSites() {
+    void replacesJapaneseKeywordsWithChineseNameAndUsesConfiguredSites() {
         TrendCandidate candidate = new TrendCandidate(
-            "Toys", "おもちゃ収納", "Kids toy storage box", "おもちゃ 人気", "Rakuten Ichiba",
+            "玩具", "おもちゃ収納", "儿童玩具收纳盒", "おもちゃ 人気", "Rakuten Ichiba",
             "https://example.com", null, 80, 10, 20, 70, new BigDecimal("1000"), "JPY", "测试"
         );
 
@@ -32,10 +32,28 @@ class DomesticSearchServiceTest {
         assertEquals(1, links.size());
         Charset gb18030 = Charset.forName("GB18030");
         String decoded = URLDecoder.decode(links.get(0).url(), gb18030);
-        assertTrue(decoded.contains("Kids toy storage box"));
+        assertTrue(decoded.contains("儿童玩具收纳盒"));
         assertFalse(decoded.contains("おもちゃ"));
-        assertTrue(links.get(0).url().contains(URLEncoder.encode("Kids toy storage box", gb18030)));
+        assertTrue(links.get(0).url().contains(URLEncoder.encode("儿童玩具收纳盒", gb18030)));
         assertTrue(links.get(0).note().contains("GB18030/GBK"));
+    }
+
+    @Test
+    void usesEnglishNamesAndNotesForUnitedStatesSourcingLinks() {
+        TrendCandidate candidate = new TrendCandidate(
+            "Toys", "Kids toy storage", "Kids toy storage box", "kids toy storage box", "WooCommerce US",
+            "https://example.com", null, 80, 10, 20, 70, new BigDecimal("20"), "USD", "Evidence"
+        );
+
+        List<DomesticLink> links = new DomesticSearchService().search(
+            candidate, new BigDecimal("140"),
+            List.of(new SupplierSiteConfig("淘宝", "https://s.taobao.com/search?q={keyword}")),
+            "us"
+        );
+
+        assertEquals("Taobao", links.get(0).platform());
+        assertTrue(links.get(0).title().contains("kids toy storage box"));
+        assertTrue(links.get(0).note().startsWith("Searches for"));
     }
 
     @Test

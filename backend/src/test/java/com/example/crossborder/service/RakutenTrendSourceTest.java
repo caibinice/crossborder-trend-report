@@ -24,7 +24,7 @@ class RakutenTrendSourceTest {
     @Test
     void keepsAccessKeyInHeaderAndAddsOptionalAffiliateId() {
         SourceProperties properties = new SourceProperties(
-            true, "JP", true, true, "https://shop.test", "https://us.test", "https://sea.test", "demo", "", "", "", "",
+            true, "JP", true, true, "https://shop.test", "", "", "demo", "", "", "", "",
             "rainforest", "", "", "", "app-id", "secret-key", "affiliate-id", "20260701",
             "https://openapi.rakuten.co.jp", "", "search-link", ""
         );
@@ -89,8 +89,8 @@ class RakutenTrendSourceTest {
         assertEquals("JPY", item.sourceCurrency());
         assertEquals("https://hb.afl.rakuten.co.jp/example", item.sourceUrl());
         assertEquals("https://image.rakuten.co.jp/item.jpg", item.imageUrl());
-        assertTrue(item.reason().contains("reviews=321"));
-        assertTrue(item.reason().contains("international shipping available"));
+        assertTrue(item.reason().contains("评论=321"));
+        assertTrue(item.reason().contains("支持海外配送"));
     }
 
     @Test
