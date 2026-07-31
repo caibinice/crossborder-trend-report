@@ -60,14 +60,14 @@ class SmartCandidateEnrichmentServiceTest {
     }
 
     @Test
-    void returnsEnglishProductDataForUnitedStatesMarket() throws Exception {
+    void translatesUnitedStatesProductForChineseDisplayAndKeepsOriginalEnglishName() throws Exception {
         ObjectMapper json = new ObjectMapper();
         ExternalDataSourceService external = mock(ExternalDataSourceService.class);
         when(external.aiConfigured()).thenReturn(true);
         ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
         String content = json.writeValueAsString(Map.of("items", List.of(Map.of(
-            "index", 0, "nameEn", "Kids toy storage box", "category", "Toys", "keywords", "kids toy storage box",
-            "reason", "Strong review evidence and shipping-friendly size.", "aiScore", 88
+            "index", 0, "nameCn", "儿童玩具收纳盒", "category", "玩具", "keywords", "儿童 玩具 收纳盒",
+            "reason", "评论证据充分，尺寸适合跨境运输。", "aiScore", 88
         ))));
         String response = json.writeValueAsString(Map.of("choices", List.of(Map.of("message", Map.of("content", content)))));
         when(external.postJson(anyString(), body.capture(), anyMap(), any(Duration.class))).thenReturn(response);
@@ -87,10 +87,13 @@ class SmartCandidateEnrichmentServiceTest {
         TrendCandidate result = service.enrich(List.of(source), settings, "us").get(0);
         JsonNode request = json.readTree(body.getValue());
 
-        assertTrue(request.path("messages").path(0).path("content").asText().contains("\"nameEn\""));
-        assertTrue(request.path("messages").path(0).path("content").asText().contains("Toys"));
-        assertEquals("Toys", result.category());
-        assertEquals("kids toy storage box", result.keywords());
+        assertTrue(request.path("messages").path(0).path("content").asText().contains("\"nameCn\""));
+        assertTrue(request.path("messages").path(0).path("content").asText().contains("玩具"));
+        assertEquals("玩具", result.category());
+        assertEquals("Kids toy storage", result.productNameJp());
+        assertEquals("儿童玩具收纳盒", result.productNameCn());
+        assertEquals("儿童 玩具 收纳盒", result.keywords());
+        assertTrue(result.reason().contains("跨境运输"));
         assertEquals(88D, result.aiScore());
     }
 }

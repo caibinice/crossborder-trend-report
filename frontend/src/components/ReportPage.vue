@@ -132,7 +132,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import AppIcon from './AppIcon.vue';
 import ProductCard from './ProductCard.vue';
 import ProductTable from './ProductTable.vue';
@@ -140,16 +140,16 @@ import ThemeToggle from './ThemeToggle.vue';
 import { api, formatDateTime, isDemoProduct, searchableText } from '../lib.js';
 
 const markets = [
-  { key: 'jp', region: 'JP', currency: 'JPY', nameZh: '日本市场', nameEn: 'Japan', descZh: '商品目录 + 实时趋势', descEn: 'Public catalogs + live trends', catalogEnabled: true },
-  { key: 'us', region: 'US', currency: 'USD', nameZh: '美国市场', nameEn: 'United States', descZh: '实时趋势信号', descEn: 'US catalogs + live trends', catalogEnabled: true },
-  { key: 'sea', region: 'SG', currency: 'SGD', nameZh: '东南亚市场', nameEn: 'Southeast Asia', descZh: '新加坡趋势信号', descEn: 'Singapore catalogs + SEA trends', catalogEnabled: true },
+  { key: 'jp', region: 'JP', currency: 'JPY', name: '日本市场', desc: '商品目录 + 实时趋势', catalogEnabled: true },
+  { key: 'us', region: 'US', currency: 'USD', name: '美国市场', desc: '商品目录 + 实时趋势', catalogEnabled: true },
+  { key: 'sea', region: 'SG', currency: 'SGD', name: '东南亚市场', desc: '新加坡目录 + 东南亚趋势', catalogEnabled: true },
 ];
 const activeMarket = ref('jp');
 const currentMarket = computed(() => markets.find((item) => item.key === activeMarket.value) || markets[0]);
-const isEnglish = computed(() => currentMarket.value.key !== 'jp');
+const isEnglish = false;
 const currentMarketName = computed(() => marketText(currentMarket.value, 'name'));
-const locale = computed(() => isEnglish.value ? 'en-US' : 'zh-CN');
-const allCategory = computed(() => isEnglish.value ? 'All' : '全部');
+const locale = computed(() => 'zh-CN');
+const allCategory = computed(() => '全部');
 const sidebarOpen = ref(false);
 const health = ref(null);
 const reports = ref([]);
@@ -312,12 +312,10 @@ function trendHeat(signal, index = 0) {
 function categoryCount(category) { return category === allCategory.value ? products.value.length : products.value.filter((item) => item.category === category).length; }
 function sourceIcon(type) { return ({ signal: 'activity', rate: 'money', catalog: 'package', history: 'chart' })[type] || 'database'; }
 function resetFilters() { Object.assign(filters, { keyword: '', category: allCategory.value, minHeat: '', minProfit: '', maxCost: '', sortBy: 'rank' }); }
-function tr(chinese, english) { return isEnglish.value ? english : chinese; }
-function marketText(market, field) { return isEnglish.value ? market[`${field}En`] : market[`${field}Zh`]; }
-watch(isEnglish, (english) => {
-  document.documentElement.lang = english ? 'en' : 'zh-CN';
-  document.title = english ? 'Northstar Cross-border Intelligence' : 'Northstar 跨境趋势情报';
-}, { immediate: true });
+function tr(chinese) { return chinese; }
+function marketText(market, field) { return market[field]; }
+document.documentElement.lang = 'zh-CN';
+document.title = 'Northstar 跨境趋势情报';
 onUnmounted(() => {
   document.documentElement.lang = 'zh-CN';
   document.title = 'Northstar 跨境趋势情报';

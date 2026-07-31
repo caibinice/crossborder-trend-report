@@ -39,10 +39,10 @@ class DomesticSearchServiceTest {
     }
 
     @Test
-    void usesEnglishNamesAndNotesForUnitedStatesSourcingLinks() {
+    void usesChineseTranslationAndNotesForUnitedStatesSourcingLinks() {
         TrendCandidate candidate = new TrendCandidate(
-            "Toys", "Kids toy storage", "Kids toy storage box", "kids toy storage box", "WooCommerce US",
-            "https://example.com", null, 80, 10, 20, 70, new BigDecimal("20"), "USD", "Evidence"
+            "玩具", "Kids toy storage", "儿童玩具收纳盒", "儿童 玩具 收纳盒", "WooCommerce US",
+            "https://example.com", null, 80, 10, 20, 70, new BigDecimal("20"), "USD", "评论证据"
         );
 
         List<DomesticLink> links = new DomesticSearchService().search(
@@ -51,9 +51,9 @@ class DomesticSearchServiceTest {
             "us"
         );
 
-        assertEquals("Taobao", links.get(0).platform());
-        assertTrue(links.get(0).title().contains("kids toy storage box"));
-        assertTrue(links.get(0).note().startsWith("Searches for"));
+        assertEquals("淘宝", links.get(0).platform());
+        assertTrue(links.get(0).title().contains("儿童 玩具 收纳盒"));
+        assertTrue(links.get(0).note().startsWith("使用 UTF-8 中文采购词"));
     }
 
     @Test

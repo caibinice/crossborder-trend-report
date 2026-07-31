@@ -4,7 +4,7 @@ import { test } from 'node:test';
 
 const component = (name) => new URL(`../src/components/${name}`, import.meta.url);
 
-test('keeps the original Japan dashboard copy while providing English market copy', async () => {
+test('uses Chinese dashboard copy for all markets and keeps translated and original product names', async () => {
   const [report, card, table, theme] = await Promise.all([
     readFile(component('ReportPage.vue'), 'utf8'),
     readFile(component('ProductCard.vue'), 'utf8'),
@@ -29,7 +29,21 @@ test('keeps the original Japan dashboard copy while providing English market cop
   assert.ok(table.includes('没有匹配商品'));
   assert.ok(theme.includes('切换浅色模式'));
 
-  for (const text of ['Cross-border Intelligence', 'Product Discovery', 'Product Opportunity Radar']) {
-    assert.ok(report.includes(text), `missing English market copy: ${text}`);
-  }
+  assert.ok(report.includes("name: '美国市场'"));
+  assert.ok(report.includes("name: '东南亚市场'"));
+  assert.ok(report.includes('function tr(chinese) { return chinese; }'));
+  assert.ok(card.includes('product.productNameCn'));
+  assert.ok(card.includes('product.productNameJp'));
+  assert.ok(card.includes('原始商品名：'));
+});
+
+test('loads product thumbnails eagerly for mobile browsers', async () => {
+  const [card, styles] = await Promise.all([
+    readFile(component('ProductCard.vue'), 'utf8'),
+    readFile(new URL('../src/style.css', import.meta.url), 'utf8'),
+  ]);
+
+  assert.ok(card.includes('loading="eager"'));
+  assert.ok(card.includes('referrerpolicy="no-referrer"'));
+  assert.match(styles, /\.product-media img \{[^}]*display: block;/);
 });

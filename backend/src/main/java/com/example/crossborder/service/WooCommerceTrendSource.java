@@ -68,7 +68,9 @@ public class WooCommerceTrendSource {
                 if (price.signum() <= 0) continue;
                 String currency = prices.path("currency_code").asText(market.currency()).toUpperCase(Locale.ROOT);
                 String sourceCategory = firstText(product.path("categories"), "name");
-                String category = classify(title + " " + sourceCategory, market.english());
+                String category = market.english()
+                    ? MarketCatalog.chineseCategory(classifyEnglish(title + " " + sourceCategory))
+                    : classifyJapaneseMarket(title + " " + sourceCategory);
                 double rating = product.path("average_rating").asDouble(0);
                 long reviewCount = product.path("review_count").asLong(0);
                 double heat = Math.min(100D, Math.max(35D,
@@ -77,14 +79,9 @@ public class WooCommerceTrendSource {
                 double amountSignal = volumeSignal * price.doubleValue();
                 String image = firstText(product.path("images"), "src");
                 String description = clean(product.path("short_description").asText(""));
-                String reason = market.english()
-                    ? "Public storefront popularity rank #" + position + "; source category: "
-                        + value(sourceCategory, "Uncategorized")
-                        + (reviewCount > 0 ? "; reviews=" + reviewCount + ", rating=" + rating : "")
-                        + (description.isBlank() ? "." : "; " + abbreviate(description, 120))
-                    : "公开店铺热销排序第 " + position + "；来源类目=" + value(sourceCategory, "未分类")
-                        + (reviewCount > 0 ? "；评论=" + reviewCount + "，评分=" + rating : "")
-                        + (description.isBlank() ? "。" : "；" + abbreviate(description, 70));
+                String reason = "公开店铺热销排序第 " + position + "；来源类目=" + value(sourceCategory, "未分类")
+                    + (reviewCount > 0 ? "；评论=" + reviewCount + "，评分=" + rating : "")
+                    + (description.isBlank() ? "。" : "；" + abbreviate(description, 70));
                 candidates.add(new TrendCandidate(
                     category, title, title, keyword(title),
                     market.english()
@@ -114,10 +111,6 @@ public class WooCommerceTrendSource {
     private String firstText(JsonNode array, String field) {
         if (!array.isArray() || array.isEmpty()) return "";
         return clean(array.get(0).path(field).asText(""));
-    }
-
-    private String classify(String value, boolean english) {
-        return english ? classifyEnglish(value) : classifyJapaneseMarket(value);
     }
 
     private String classifyJapaneseMarket(String value) {

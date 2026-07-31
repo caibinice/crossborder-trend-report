@@ -1,7 +1,7 @@
 <template>
   <article class="product-card">
     <div class="product-media" :class="{ placeholder: !product.imageUrl || imageFailed }">
-      <img v-if="product.imageUrl && !imageFailed" :src="product.imageUrl" :alt="product.productNameCn" loading="lazy" @error="imageFailed = true" />
+      <img v-if="product.imageUrl && !imageFailed" :src="product.imageUrl" :alt="product.productNameCn" loading="eager" decoding="async" referrerpolicy="no-referrer" @error="imageFailed = true" />
       <AppIcon v-else name="package" />
       <span class="rank-badge">#{{ displayRank || product.rank }}</span>
       <span :class="['quality-badge', isDemoProduct(product) ? 'demo' : 'live']">{{ isDemoProduct(product) ? tr('演示', 'Demo') : tr('真实目录', 'Live catalog') }}</span>
@@ -10,7 +10,7 @@
       <div class="product-meta"><span>{{ product.category }}</span><i /><span>{{ regionOf(product, english) }}</span><strong>{{ tr('热度', 'Heat') }} {{ product.heatScore }}</strong></div>
       <div class="score-chips"><span>{{ tr('销量指数', 'Sales-volume proxy') }} <b>{{ product.salesVolumeScore ?? '-' }}</b></span><span>{{ tr('销售额指数', 'Sales-value proxy') }} <b>{{ product.salesAmountScore ?? '-' }}</b></span><span>AI <b>{{ product.aiScore ?? '-' }}</b></span></div>
       <h2>{{ product.productNameCn }}</h2>
-      <p v-if="sourceTitle && sourceTitle !== product.productNameCn" class="source-title">{{ sourceTitle }}</p>
+      <p v-if="sourceTitle && sourceTitle !== product.productNameCn" class="source-title"><span>{{ tr('原始商品名：', 'Original name: ') }}</span>{{ sourceTitle }}</p>
       <p class="product-reason">{{ product.reason }}</p>
 
       <div class="metric-strip">

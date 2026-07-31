@@ -357,7 +357,7 @@ svg.app-icon { width: 1.15em; height: 1.15em; flex: 0 0 auto; }
 .product-card { min-width: 0; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow-sm); transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease; }
 .product-card:hover { border-color: var(--line-strong); box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .product-media { position: relative; height: 218px; overflow: hidden; background: var(--surface-soft); }
-.product-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 300ms ease; }
+.product-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 300ms ease; }
 .product-card:hover .product-media img { transform: scale(1.025); }
 .product-media.placeholder { display: grid; place-items: center; background: linear-gradient(145deg, var(--surface-hover), var(--surface-soft)); }
 .product-media.placeholder::after { width: 70px; height: 70px; content: ""; background: var(--primary-soft); border-radius: 24px; transform: rotate(15deg); }
@@ -375,6 +375,7 @@ svg.app-icon { width: 1.15em; height: 1.15em; flex: 0 0 auto; }
 .product-meta strong { margin-left: auto; color: var(--warning); }
 .product-content h2 { display: -webkit-box; min-height: 46px; margin: 11px 0 5px; overflow: hidden; font-size: 18px; line-height: 1.3; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .source-title { overflow: hidden; margin: 0 0 9px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.source-title span { color: var(--faint); }
 .product-reason { display: -webkit-box; min-height: 39px; margin: 0 0 14px; overflow: hidden; color: var(--text-soft); font-size: 12px; line-height: 1.6; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .metric-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: hidden; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 13px; }
 .metric-strip > div { min-width: 0; padding: 11px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }

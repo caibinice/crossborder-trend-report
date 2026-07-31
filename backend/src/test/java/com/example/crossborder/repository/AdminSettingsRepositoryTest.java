@@ -74,7 +74,7 @@ class AdminSettingsRepositoryTest {
         assertIterableEquals(List.of("WooCommerce公开目录", "Google Trends", "Yahoo Shopping", "Rakuten"), settings.foreignSources());
         assertIterableEquals(List.of("1688", "淘宝", "拼多多"), settings.domesticSources());
         assertIterableEquals(List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "厨房", "服饰", "食品"), settings.categories());
-        assertIterableEquals(List.of("日本", "United States", "Southeast Asia"), settings.regions());
+        assertIterableEquals(List.of("日本", "美国", "东南亚"), settings.regions());
         assertEquals("0 30 8 * * *", settings.frequencyCron());
         assertEquals(200, settings.maxProducts());
         assertEquals(10, settings.maxCategories());

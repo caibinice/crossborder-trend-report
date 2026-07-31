@@ -3,7 +3,7 @@
     <template v-if="section === 'sources'">
       <div class="form-grid">
         <label class="field"><span>商品数据模式</span><select v-model="draft.sourceMode"><option value="external">仅真实数据（推荐）</option><option value="mixed">真实数据 + 演示补位</option><option value="demo">仅演示数据</option></select><small class="field-help">external 模式采集失败时会明确报错，不会静默回退 Demo。</small></label>
-        <label class="field switch-field"><span><b>AI 智能标准化</b><small>日本市场翻译为中文采购词；美国与东南亚市场统一为英语</small></span><input v-model="draft.smartMode" type="checkbox" role="switch" /></label>
+        <label class="field switch-field"><span><b>AI 智能翻译与评分</b><small>三个市场均生成中文商品标题、采购词和评分理由，并保留来源原始商品名</small></span><input v-model="draft.smartMode" type="checkbox" role="switch" /></label>
         <label class="field full-field"><span>国外检索数据源</span><textarea :value="joinText(draft.foreignSources)" @input="draft.foreignSources = splitText($event.target.value)" /></label>
         <label class="field full-field"><span>大分类（按行配置，按顺序取前 N 个）</span><textarea :value="joinText(draft.categories)" @input="draft.categories = splitText($event.target.value)" /></label>
         <label class="field"><span>采集大分类数</span><input v-model.number="draft.maxCategories" type="number" min="1" max="20" /></label>

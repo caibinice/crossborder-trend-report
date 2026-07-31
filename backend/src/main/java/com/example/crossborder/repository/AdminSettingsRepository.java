@@ -95,7 +95,7 @@ public class AdminSettingsRepository {
                 ) VALUES(
                   ?, ?, 'WooCommerce公开目录,Google Trends,Yahoo Shopping,Rakuten', '1688,淘宝,拼多多',
                   '玩具,家居,美妆,宠物,数码,户外,母婴,厨房,服饰,食品',
-                  '日本,United States,Southeast Asia', 'external', '0 30 8 * * *', 200, 10, 20, 'sales_volume',
+                  '日本,美国,东南亚', 'external', '0 30 8 * * *', 200, 10, 20, 'sales_volume',
                   0.048, true, 18, true
                 )
                 """,

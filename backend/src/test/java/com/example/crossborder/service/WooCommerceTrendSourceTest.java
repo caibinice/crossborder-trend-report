@@ -42,7 +42,7 @@ class WooCommerceTrendSourceTest {
     }
 
     @Test
-    void parsesUnitedStatesCatalogInEnglish() {
+    void keepsUnitedStatesOriginalNameButUsesChineseCategoryAndReason() {
         String response = """
             [{
               "name":"Matcha &amp; Chocolate Gift",
@@ -61,8 +61,9 @@ class WooCommerceTrendSourceTest {
 
         TrendCandidate candidate = source.parse(response, "https://shop.test", "us").get(0);
 
-        assertEquals("Food", candidate.category());
+        assertEquals("食品", candidate.category());
+        assertEquals("Matcha & Chocolate Gift", candidate.productNameJp());
         assertEquals("WooCommerce US / shop.test", candidate.sourcePlatform());
-        assertTrue(candidate.reason().contains("reviews=23"));
+        assertTrue(candidate.reason().contains("评论=23"));
     }
 }

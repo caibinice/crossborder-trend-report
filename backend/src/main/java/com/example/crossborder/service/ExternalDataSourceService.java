@@ -58,7 +58,7 @@ public class ExternalDataSourceService {
     }
 
     public List<DataSourceStatus> statuses(String marketKey) {
-        return MarketCatalog.get(marketKey).english() ? englishStatuses() : japaneseMarketStatuses();
+        return MarketCatalog.get(marketKey).english() ? internationalMarketChineseStatuses() : japaneseMarketStatuses();
     }
 
     private List<DataSourceStatus> japaneseMarketStatuses() {
@@ -109,58 +109,58 @@ public class ExternalDataSourceService {
         );
     }
 
-    private List<DataSourceStatus> englishStatuses() {
+    private List<DataSourceStatus> internationalMarketChineseStatuses() {
         return List.of(
-            status("google-trends", "Google Trends live searches", "signal", "RSS", properties.googleTrendsEnabled(), true, true,
-                "Live search signals for Japan, the United States, and Southeast Asia.",
-                "https://trends.google.com/trending", "No account or API key required; JP, US, and SG are enabled by default.",
-                List.of("No credentials required"), List.of("GOOGLE_TRENDS_ENABLED", "GOOGLE_TRENDS_REGIONS", "OUTBOUND_HTTP_PROXY (optional)")),
-            status("frankfurter", "Frankfurter public exchange rates", "rate", "public-api", properties.frankfurterEnabled(), true, true,
-                "Central-bank reference rates such as JPY/CNY, USD/CNY, and SGD/CNY.",
-                "https://frankfurter.dev/", "No account or API key required; rates are cached in MySQL by date.",
-                List.of("No credentials required"), List.of("FRANKFURTER_ENABLED")),
-            status("woocommerce", "WooCommerce public catalogs", "catalog", "store-api", wooConfigured(), true, false,
-                "Public products, prices, images, categories, ratings, and popularity ordering for all three markets.",
+            status("google-trends", "Google Trends 实时趋势", "signal", "RSS", properties.googleTrendsEnabled(), true, true,
+                "日本、美国、东南亚实时搜索趋势信号，直接入库用于趋势雷达。",
+                "https://trends.google.com/trending", "无需账号或 Key；默认同步 JP、US、SG。",
+                List.of("无需材料"), List.of("GOOGLE_TRENDS_ENABLED", "GOOGLE_TRENDS_REGIONS", "OUTBOUND_HTTP_PROXY（可选）")),
+            status("frankfurter", "Frankfurter 公共汇率", "rate", "public-api", properties.frankfurterEnabled(), true, true,
+                "同步 JPY/CNY、USD/CNY、SGD/CNY 等央行参考汇率，用于多币种利润换算。",
+                "https://frankfurter.dev/", "无需账号或 Key；汇率按日期缓存到 MySQL。",
+                List.of("无需材料"), List.of("FRANKFURTER_ENABLED")),
+            status("woocommerce", "WooCommerce 公共商品目录", "catalog", "store-api", wooConfigured(), true, false,
+                "采集三个市场公开店铺的商品、价格、图片、类目、评分和热销排序。",
                 "https://developer.woocommerce.com/docs/apis/store-api/resources-endpoints/products",
-                "No key required. Each market has an independent, replaceable store URL list.",
-                List.of("Public WooCommerce storefront URLs"), List.of(
+                "无需 Key；每个市场使用独立且可替换的店铺 URL 列表。",
+                List.of("公开 WooCommerce 店铺首页 URL"), List.of(
                     "WOOCOMMERCE_ENABLED", "WOOCOMMERCE_STORE_URLS",
                     "WOOCOMMERCE_US_STORE_URLS", "WOOCOMMERCE_SEA_STORE_URLS"
                 )),
             status("yahoo-shopping", "Yahoo! Japan Shopping", "catalog", "official-api", has(properties.yahooShoppingClientId()), false, false,
-                "High-rating trend rankings and Japanese product search with tax-inclusive prices, images, ratings, and review counts.",
+                "日本商品高评价趋势榜，以及含税价格、图片、评分和评论数搜索。",
                 "https://developer.yahoo.co.jp/webapi/shopping/shopping/v1/highRatingTrendRanking.html",
-                "A Client ID enables live reports; the public API does not expose exact unit sales or revenue.",
-                List.of("Yahoo! JAPAN developer account", "Application Client ID"), List.of("YAHOO_SHOPPING_CLIENT_ID")),
+                "申请 Client ID 后即可参与真实日报；公开接口不返回具体销量或销售额。",
+                List.of("Yahoo! JAPAN 开发者账号", "应用 Client ID"), List.of("YAHOO_SHOPPING_CLIENT_ID")),
             status("rakuten", "Rakuten Ichiba", "catalog", "official-api", rakutenConfigured(), false, false,
-                "Rakuten Japan products, prices, images, reviews, and international-shipping information.",
+                "日本乐天商品、价格、图片、评论和海外配送信息。",
                 "https://webservice.rakuten.co.jp/index.php/documentation/ichiba-item-search",
-                "The 2026 API requires both an Application ID and Access Key; Affiliate ID is optional.",
-                List.of("Rakuten Web Service application", "Application ID", "Access Key", "Affiliate ID (optional)"),
-                List.of("RAKUTEN_APPLICATION_ID", "RAKUTEN_ACCESS_KEY", "RAKUTEN_AFFILIATE_ID (optional)")),
+                "2026 版接口同时需要 Application ID 与 Access Key；Affiliate ID 可选。",
+                List.of("Rakuten Web Service 应用", "Application ID", "Access Key", "Affiliate ID（可选）"),
+                List.of("RAKUTEN_APPLICATION_ID", "RAKUTEN_ACCESS_KEY", "RAKUTEN_AFFILIATE_ID（可选）")),
             status("rainforest", "Amazon / Rainforest API", "catalog", value(properties.amazonMode(), "rainforest"), has(properties.rainforestApiKey()), false, false,
-                "Amazon Japan search results, product prices, ratings, ranks, and images.",
+                "Amazon 商品搜索、价格、评分、排名和图片。",
                 "https://www.rainforestapi.com/docs/product-data-api/overview",
-                "Provides structured Amazon data and is billed according to the provider plan.",
-                List.of("Rainforest API account", "API Key"), List.of("RAINFOREST_API_KEY")),
+                "适合快速获得结构化 Amazon 数据，按服务商套餐计费。",
+                List.of("Rainforest API 账号", "API Key"), List.of("RAINFOREST_API_KEY")),
             status("keepa", "Amazon / Keepa", "history", "keepa", has(properties.keepaApiKey()), false, false,
-                "Amazon price history, BSR, categories, and offer history.",
-                "https://keepa.com/#!api", "Reserved for future historical-chart enrichment.",
-                List.of("Keepa subscription", "API Key"), List.of("KEEPA_API_KEY")),
-            status("deepseek", "DeepSeek normalization and scoring", "enrichment", value(aiProperties.model(), "deepseek-v4-pro"), aiConfigured(), false, false,
-                "Normalizes product data to English and provides an auditable cross-border potential score.",
-                "https://api-docs.deepseek.com/guides/thinking_mode", "Uses V4 Pro Thinking high by default; source data remains available when enrichment fails.",
+                "Amazon 价格历史、BSR、类目和报价历史。",
+                "https://keepa.com/#!api", "当前显示接入位，后续可用于历史曲线增强。",
+                List.of("Keepa 订阅", "API Key"), List.of("KEEPA_API_KEY")),
+            status("deepseek", "DeepSeek 中文翻译与评分", "enrichment", value(aiProperties.model(), "deepseek-v4-pro"), aiConfigured(), false, false,
+                "把日文或英文商品名翻译为中文采购词，并输出可审计的跨境潜力评分。",
+                "https://api-docs.deepseek.com/zh-cn/guides/thinking_mode", "默认使用 V4 Pro Thinking high；失败时保留原始商品名并使用中文品类兜底。",
                 List.of("DeepSeek API Key"), List.of("AI_ENRICHMENT_ENABLED", "DEEPSEEK_API_KEY", "DEEPSEEK_MODEL", "DEEPSEEK_REASONING_EFFORT")),
             status("tiktok-apify", "TikTok / Apify", "social", value(properties.tiktokMode(), "demo"), has(properties.apifyToken()), false, false,
-                "TikTok Japan video and product trend collection.",
+                "TikTok 热门视频与商品趋势采集。",
                 "https://apify.com/clockworks/tiktok-scraper",
-                "The integration slot is ready; current reports prioritize verifiable product catalogs.",
-                List.of("Apify account", "API Token"), List.of("APIFY_TOKEN")),
-            status("supplier-search", "1688 / China sourcing", "supplier", value(properties.supplierMode(), "search-link"), false, false, false,
-                "Generates sourcing search links for 1688, Taobao, and Pinduoduo and estimates procurement costs.",
+                "已保留配置位，当前日报优先使用可验证商品目录。",
+                List.of("Apify 账号", "API Token"), List.of("APIFY_TOKEN")),
+            status("supplier-search", "1688 / 国内采购", "supplier", value(properties.supplierMode(), "search-link"), false, false, false,
+                "生成 1688、淘宝、拼多多中文采购检索入口并估算成本。",
                 "https://open.1688.com/",
-                "Estimated prices are labeled clearly; exact quotes require the open platform or supplier quotations.",
-                List.of("For exact quotes: a 1688 Open Platform application or supplier quotation sheet"), List.of("SUPPLIER_MODE"))
+                "当前价格为估算值并明确标注；真实报价需开放平台或供应商报价单。",
+                List.of("如需真实报价：1688 开放平台应用或供应商报价表"), List.of("SUPPLIER_MODE"))
         );
     }
 

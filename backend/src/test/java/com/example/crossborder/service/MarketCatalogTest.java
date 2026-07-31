@@ -14,11 +14,11 @@ class MarketCatalogTest {
     }
 
     @Test
-    void mapsConfiguredJapanCategoriesToEnglishForOtherMarkets() {
-        List<String> configured = List.of("玩具", "家居", "美妆", "串珠");
+    void normalizesLegacyEnglishCategoriesToChineseForOtherMarkets() {
+        List<String> configured = List.of("Toys", "Home & Living", "Beauty", "Beading");
 
         assertIterableEquals(
-            List.of("Toys", "Home & Living", "Beauty", "Beading"),
+            List.of("玩具", "家居", "美妆", "串珠"),
             MarketCatalog.categories(configured, "sea")
         );
     }

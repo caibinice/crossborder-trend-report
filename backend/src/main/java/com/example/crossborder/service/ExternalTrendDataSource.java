@@ -76,7 +76,7 @@ public class ExternalTrendDataSource implements TrendDataSource {
 
     private List<TrendCandidate> japanOnly(String market, Supplier<List<TrendCandidate>> fetcher) {
         if (!"jp".equals(market)) {
-            throw new ApiValidationException("This source is available only for the Japan market");
+            throw new ApiValidationException("该数据源仅适用于日本市场");
         }
         return fetcher.get();
     }

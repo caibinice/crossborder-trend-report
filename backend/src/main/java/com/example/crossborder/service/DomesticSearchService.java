@@ -22,25 +22,22 @@ public class DomesticSearchService {
     public List<DomesticLink> search(
         TrendCandidate candidate, BigDecimal sourcePriceCny, List<SupplierSiteConfig> configuredSites, String marketKey
     ) {
-        boolean english = MarketCatalog.get(marketKey).english();
+        MarketCatalog.get(marketKey);
         BigDecimal base = estimate(candidate.category(), sourcePriceCny);
         String query = procurementQuery(candidate, marketKey);
         List<SupplierSiteConfig> sites = configuredSites == null || configuredSites.isEmpty()
-            ? defaultSites(english)
+            ? defaultSites()
             : configuredSites;
         List<DomesticLink> links = new ArrayList<>();
         for (SupplierSiteConfig site : sites) {
             String encoded = SupplierSearchUrlCodec.encodeKeyword(site, query);
             BigDecimal price = base.multiply(multiplier(site.name())).setScale(2, RoundingMode.HALF_UP);
-            String platform = english ? englishPlatform(site.name()) : site.name();
+            String platform = chinesePlatform(site.name());
             links.add(new DomesticLink(
-                0, 0, platform, english ? query + " - " + platform + " search" : query + " - " + platform + "搜索",
+                0, 0, platform, query + " - " + platform + "搜索",
                 site.urlTemplate().replace("{keyword}", encoded), price,
-                english
-                    ? "Searches for \"" + query + "\" using " + SupplierSearchUrlCodec.encodingLabel(site)
-                        + " encoding. Price is an estimate; verify the current supplier quote."
-                    : "使用 " + SupplierSearchUrlCodec.encodingLabel(site) + " 中文采购词“" + query
-                        + "”跳转搜索；价格为估算，需以平台实时报价为准。"
+                "使用 " + SupplierSearchUrlCodec.encodingLabel(site) + " 中文采购词“" + query
+                    + "”跳转搜索；价格为估算，需以平台实时报价为准。"
             ));
         }
         return List.copyOf(links);
@@ -51,14 +48,7 @@ public class DomesticSearchService {
     }
 
     String procurementQuery(TrendCandidate candidate, String marketKey) {
-        if (MarketCatalog.get(marketKey).english()) {
-            String keywords = clean(candidate.keywords());
-            if (isEnglish(keywords)) return abbreviate(keywords, 80);
-            String englishName = clean(candidate.productNameCn());
-            if (isEnglish(englishName)) return abbreviate(englishName, 80);
-            String category = clean(candidate.category());
-            return isEnglish(category) ? category + " trending product" : "Cross-border trending product";
-        }
+        MarketCatalog.get(marketKey);
         String keywords = clean(candidate.keywords());
         if (isChinese(keywords)) return abbreviate(keywords, 80);
         String chineseName = clean(candidate.productNameCn());
@@ -67,22 +57,18 @@ public class DomesticSearchService {
         return category.isBlank() ? "跨境热销商品" : category + " 热销商品";
     }
 
-    private List<SupplierSiteConfig> defaultSites(boolean english) {
+    private List<SupplierSiteConfig> defaultSites() {
         return List.of(
             new SupplierSiteConfig("1688", "https://s.1688.com/selloffer/offer_search.htm?keywords={keyword}"),
-            new SupplierSiteConfig(english ? "Taobao" : "淘宝", "https://s.taobao.com/search?q={keyword}"),
-            new SupplierSiteConfig(english ? "Pinduoduo" : "拼多多", "https://mobile.yangkeduo.com/search_result.html?search_key={keyword}")
+            new SupplierSiteConfig("淘宝", "https://s.taobao.com/search?q={keyword}"),
+            new SupplierSiteConfig("拼多多", "https://mobile.yangkeduo.com/search_result.html?search_key={keyword}")
         );
     }
 
-    private String englishPlatform(String value) {
-        if ("淘宝".equals(value)) return "Taobao";
-        if ("拼多多".equals(value)) return "Pinduoduo";
+    private String chinesePlatform(String value) {
+        if ("Taobao".equalsIgnoreCase(value)) return "淘宝";
+        if ("Pinduoduo".equalsIgnoreCase(value)) return "拼多多";
         return value;
-    }
-
-    private boolean isEnglish(String value) {
-        return value != null && !value.isBlank() && value.matches(".*[A-Za-z].*");
     }
 
     private boolean containsJapaneseKana(String value) {

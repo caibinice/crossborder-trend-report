@@ -73,7 +73,7 @@ public class ReportController {
     public TrendReport latest(@RequestParam(defaultValue = "jp") String marketKey) {
         return reports.latest(marketKey).orElseThrow(() -> new ResponseStatusException(
             HttpStatus.NOT_FOUND,
-            "jp".equalsIgnoreCase(marketKey) ? "暂无日报，请先手动生成" : "No report is available yet"
+            "暂无日报，请先手动生成"
         ));
     }
 
@@ -93,7 +93,7 @@ public class ReportController {
         return reports.byDate(date, marketKey)
             .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND,
-                "jp".equalsIgnoreCase(marketKey) ? "该日期暂无日报，请手动生成" : "No report is available for that market and date"
+                "该日期暂无日报，请手动生成"
             ));
     }
 

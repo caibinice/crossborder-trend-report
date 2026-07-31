@@ -28,9 +28,11 @@ class ExternalDataSourceServiceTest {
     }
 
     @Test
-    void exposesOnlyEnglishStatusCopyForUnitedStatesAndSoutheastAsia() {
-        assertFalse(HAN.matcher(flatten(service.statuses("us"))).find());
-        assertFalse(HAN.matcher(flatten(service.statuses("sea"))).find());
+    void exposesChineseStatusCopyForUnitedStatesAndSoutheastAsia() {
+        assertTrue(HAN.matcher(flatten(service.statuses("us"))).find());
+        assertTrue(HAN.matcher(flatten(service.statuses("sea"))).find());
+        assertFalse(flatten(service.statuses("us")).contains("public catalogs"));
+        assertFalse(flatten(service.statuses("sea")).contains("China sourcing"));
     }
 
     private String flatten(List<DataSourceStatus> statuses) {
