@@ -48,6 +48,8 @@ Thumbs.db
 .mysql-local/
 .deploy/
 .venv*/
+__pycache__/
+*.py[cod]
 
 # Git worktrees
 .worktrees/
