@@ -30,6 +30,13 @@ credentials.txt
 # IDE / OS
 .idea/
 .vscode/
+.claude/
+.codex/
+.cursor/
+.continue/
+.windsurf/
+.roo/
+.aider*
 *.iml
 .DS_Store
 Thumbs.db

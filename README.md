@@ -10,6 +10,11 @@
 项目本地 `credentials.txt` 缺失时，启动和统一部署脚本会读取兄弟目录
 `ai-blog/credentials.txt` 中的 `crossborder.*` 命名空间。
 
+新机器应按
+[`ai-blog` 的四仓库复现指南](https://github.com/caibinice/ai-blog/blob/main/docs/new-machine-setup.md)
+以固定兄弟目录名检出四个仓库，并只复制博客根目录的一份共享凭据。统一
+依赖安装、部署和基于 `20808` 代理的 GitHub 提交方式也在该指南中说明。
+
 ## 功能概览
 
 - 前台选品驾驶舱：多来源商品聚合、综合热度/销量指数/销售额指数切换、实时搜索趋势、汇率、多币种利润、卡片/表格筛选
