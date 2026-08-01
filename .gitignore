@@ -47,6 +47,7 @@ Thumbs.db
 .cache/
 .mysql-local/
 .deploy/
+.venv*/
 
 # Git worktrees
 .worktrees/

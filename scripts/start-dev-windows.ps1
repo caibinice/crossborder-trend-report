@@ -158,6 +158,9 @@ function Wait-PortReady {
 $credentialMap = @{}
 if (Test-Path $credentialsFile) {
   $credentialMap = Import-IniFile -Path $credentialsFile
+  if ($credentialMap.ContainsKey('crossborder.mysql.remote')) {
+    $credentialSectionPrefix = 'crossborder.'
+  }
 }
 
 $resolvedEnvFile = if ($EnvFile) {

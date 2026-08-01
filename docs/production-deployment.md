@@ -15,11 +15,11 @@
 `/opt/crossborder-trend-report/shared/app.env` 读取；可从
 `deploy/application-production.env.example` 复制，但真实数据库密码、
 JWT 密钥、统一操作口令、DeepSeek token、Rakuten 凭据和 Yahoo Client ID 不得进入 Git。
-统一发布器优先读取项目本地 `credentials.txt`；本地文件不存在时读取
-`ai-blog/credentials.txt` 的 `crossborder.*` 命名空间，并将 Rakuten
-Application ID、Access Key 与 Affiliate ID 注入服务器 `shared/app.env`。
-新发布机的四仓库固定目录、分支和一次性 bootstrap 步骤见兄弟仓库
-`ai-blog/docs/new-machine-setup.md`；无需复制旧机器的 `.deploy` 或构建产物。
+仓库内 `scripts/deploy.ps1` 是独立发布入口，默认只读取项目根目录
+`credentials.txt`；文件可使用无前缀项目段，也可直接使用通用文件中的
+`crossborder.*` 段。项目文件缺失时才兼容读取兄弟目录博客凭据，但博客
+不是部署前置条件。脚本会将 Rakuten、Yahoo 等配置写入服务器
+`shared/app.env`，并且只重启跨境服务，不改动其他项目或 Nginx。
 启用 Yahoo 数据源时，还必须通过发布器或服务器环境文件写入
 `YAHOO_SHOPPING_CLIENT_ID`；仓库只保留空值/占位值。
 阿里云中国大陆出口默认使用 Rakuten 官方 CNAME 网关，绕过被污染的域名

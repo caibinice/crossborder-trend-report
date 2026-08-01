@@ -7,13 +7,10 @@
 发布、回滚与 systemd 参数见
 [`docs/production-deployment.md`](docs/production-deployment.md)；所有
 真实密钥只放在忽略的 `credentials.txt` 或服务器 `shared/app.env`。
-项目本地 `credentials.txt` 缺失时，启动和统一部署脚本会读取兄弟目录
-`ai-blog/credentials.txt` 中的 `crossborder.*` 命名空间。
-
-新机器应按
-[`ai-blog` 的四仓库复现指南](https://github.com/caibinice/ai-blog/blob/main/docs/new-machine-setup.md)
-以固定兄弟目录名检出四个仓库，并只复制博客根目录的一份共享凭据。统一
-依赖安装、部署和基于 `20808` 代理的 GitHub 提交方式也在该指南中说明。
+单独开发本项目时只需克隆本仓库，并把私有 `credentials.txt` 放在根目录；
+不要求下载 `ai-blog`。本地文件既支持无前缀项目段，也支持直接复制含
+`crossborder.*` 段的通用凭据文件。兄弟目录中的博客凭据仅作为可选兼容
+回退。
 
 ## 功能概览
 
@@ -33,6 +30,25 @@
 - `frontend`：Vite + Vue 前端
 - `scripts`：Windows / Ubuntu 启停脚本
 - `logs`：运行日志与进程状态文件（已忽略提交）
+
+## 独立构建、部署与提交
+
+```powershell
+# 只验证本地完整构建，不连接服务器
+pwsh -File scripts/deploy.ps1 -BuildOnly
+
+# 仅发布跨境项目；不会重启 Nginx、量化或智能座舱
+pwsh -File scripts/deploy.ps1
+
+# 通过本项目 credentials.txt 的 token 和 20808 代理提交推送
+pwsh -File scripts/github-push.ps1 `
+  -Message 'fix: describe the change' `
+  -Files @('path/to/changed-file')
+```
+
+首次远程发布会在忽略的 `.venv-deploy` 安装 Paramiko，并在本项目
+`.deploy` 生成独立签名密钥。现有服务器需已配置 `/crossBorderTrend/`
+Nginx 路由；项目级发布只更新自己的 release、静态目录和 systemd 服务。
 
 ## 启动配置
 
