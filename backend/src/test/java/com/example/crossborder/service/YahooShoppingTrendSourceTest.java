@@ -129,7 +129,7 @@ class YahooShoppingTrendSourceTest {
 
     private SourceProperties sourceProperties(String yahooClientId) {
         return new SourceProperties(
-            true, "JP", true, true, "https://shop.test", "demo", "", "", "", "",
+            true, "JP", true, true, "https://shop.test", "", "", "demo", "", "", "", "",
             "rainforest", "", "", "", "", "", "", "20260701",
             "https://openapi.rakuten.co.jp", yahooClientId, "search-link", ""
         );

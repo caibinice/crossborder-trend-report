@@ -33,11 +33,11 @@ export function money(value, unit = CNY) {
   return `${unit}${Number(value).toFixed(2)}`;
 }
 
-export function currencyMoney(value, currency = 'CNY') {
+export function currencyMoney(value, currency = 'CNY', locale = 'zh-CN') {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
   const code = /^[A-Z]{3}$/.test(currency || '') ? currency : 'CNY';
   try {
-    return new Intl.NumberFormat('zh-CN', { style: 'currency', currency: code, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value));
+    return new Intl.NumberFormat(locale, { style: 'currency', currency: code, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value));
   } catch {
     return `${code} ${Number(value).toFixed(2)}`;
   }
@@ -47,19 +47,23 @@ export function pct(value) {
   return `${(Number(value || 0) * 100).toFixed(1)}%`;
 }
 
-export function regionOf(product) {
-  return `${product.sourcePlatform || ''} ${product.sourceUrl || ''}`.toLowerCase().match(/jp|japan|co\.jp|tiktok/) ? '日本' : '未知';
+export function regionOf(product, english = false) {
+  const source = `${product.sourcePlatform || ''} ${product.sourceUrl || ''}`.toLowerCase();
+  if (source.match(/\bsea\b|singapore|\.sg\b/)) return english ? 'Southeast Asia' : '东南亚';
+  if (source.match(/jp|japan|co\.jp|rakuten|yahoo|tiktok/)) return english ? 'Japan' : '日本';
+  if (source.match(/\bus\b|united states|\.com\b/) && !source.match(/jp|japan|co\.jp/)) return english ? 'United States' : '美国';
+  return english ? 'Unknown' : '未知';
 }
 
 export function isDemoProduct(product) {
   return `${product?.sourcePlatform || ''}`.toLowerCase().includes('demo');
 }
 
-export function formatDateTime(value) {
+export function formatDateTime(value, locale = 'zh-CN') {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat(locale, {
     month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(date);
 }

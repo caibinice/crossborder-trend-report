@@ -24,19 +24,35 @@ public class WooCommerceTrendSource {
     }
 
     public List<TrendCandidate> fetch(AdminSettings settings) {
-        List<String> stores = external.woocommerceStores();
+        return fetch(settings, "jp");
+    }
+
+    public List<TrendCandidate> fetch(AdminSettings settings, String marketKey) {
+        MarketCatalog.Market market = MarketCatalog.get(marketKey);
+        List<String> stores = external.woocommerceStores(market.key());
         if (stores.isEmpty()) return List.of();
         int perStore = Math.min(Math.max(settings.maxCategories() * settings.productsPerCategory(), 10), 100);
         List<TrendCandidate> candidates = new ArrayList<>();
+        DataSourceAccessException lastFailure = null;
         for (String store : stores) {
-            String body = external.get(external.woocommerceProductsUrl(store, perStore));
-            candidates.addAll(parse(body, store));
+            try {
+                String body = external.get(external.woocommerceProductsUrl(store, perStore));
+                candidates.addAll(parse(body, store, market.key()));
+            } catch (DataSourceAccessException exception) {
+                lastFailure = exception;
+            }
         }
+        if (candidates.isEmpty() && lastFailure != null) throw lastFailure;
         return candidates;
     }
 
     List<TrendCandidate> parse(String body, String storeUrl) {
+        return parse(body, storeUrl, "jp");
+    }
+
+    List<TrendCandidate> parse(String body, String storeUrl, String marketKey) {
         try {
+            MarketCatalog.Market market = MarketCatalog.get(marketKey);
             JsonNode root = json.readTree(body);
             if (!root.isArray()) throw new DataSourceAccessException("WooCommerce 返回格式不是商品数组");
             String host = URI.create(storeUrl).getHost();
@@ -50,9 +66,11 @@ public class WooCommerceTrendSource {
                 int minorUnit = Math.max(0, Math.min(prices.path("currency_minor_unit").asInt(2), 8));
                 BigDecimal price = decimal(prices.path("price").asText("0"), minorUnit);
                 if (price.signum() <= 0) continue;
-                String currency = prices.path("currency_code").asText("JPY").toUpperCase(Locale.ROOT);
+                String currency = prices.path("currency_code").asText(market.currency()).toUpperCase(Locale.ROOT);
                 String sourceCategory = firstText(product.path("categories"), "name");
-                String category = classify(title + " " + sourceCategory);
+                String category = market.english()
+                    ? MarketCatalog.chineseCategory(classifyEnglish(title + " " + sourceCategory))
+                    : classifyJapaneseMarket(title + " " + sourceCategory);
                 double rating = product.path("average_rating").asDouble(0);
                 long reviewCount = product.path("review_count").asLong(0);
                 double heat = Math.min(100D, Math.max(35D,
@@ -65,7 +83,10 @@ public class WooCommerceTrendSource {
                     + (reviewCount > 0 ? "；评论=" + reviewCount + "，评分=" + rating : "")
                     + (description.isBlank() ? "。" : "；" + abbreviate(description, 70));
                 candidates.add(new TrendCandidate(
-                    category, title, title, keyword(title), "WooCommerce / " + host,
+                    category, title, title, keyword(title),
+                    market.english()
+                        ? "WooCommerce " + market.key().toUpperCase(Locale.ROOT) + " / " + host
+                        : "WooCommerce / " + host,
                     product.path("permalink").asText(storeUrl), image, round(heat), volumeSignal, amountSignal, 50D,
                     price, currency, reason
                 ));
@@ -92,7 +113,7 @@ public class WooCommerceTrendSource {
         return clean(array.get(0).path(field).asText(""));
     }
 
-    private String classify(String value) {
+    private String classifyJapaneseMarket(String value) {
         String text = value.toLowerCase(Locale.ROOT);
         if (contains(text, "snack", "candy", "chocolate", "wafer", "corn", "peanut", "food", "tea", "coffee", "cookie", "ramen", "rice", "drink", "食品", "菓子")) return "食品";
         if (contains(text, "beauty", "skin", "cosmetic", "makeup", "hair", "美妆", "化粧")) return "美妆";
@@ -105,6 +126,21 @@ public class WooCommerceTrendSource {
         if (contains(text, "baby", "kids", "child", "母婴", "ベビー")) return "母婴";
         if (contains(text, "health", "fitness", "健康")) return "健康";
         return "家居";
+    }
+
+    private String classifyEnglish(String value) {
+        String text = value.toLowerCase(Locale.ROOT);
+        if (contains(text, "bead", "beading", "jewelry making", "jewellery making", "串珠")) return "Beading";
+        if (contains(text, "snack", "candy", "chocolate", "wafer", "corn", "peanut", "food", "tea", "coffee", "cookie", "ramen", "rice", "drink", "食品", "菓子")) return "Food";
+        if (contains(text, "beauty", "skin", "cosmetic", "makeup", "hair", "美妆", "化粧")) return "Beauty";
+        if (contains(text, "toy", "figure", "plush", "game", "玩具", "おもちゃ")) return "Toys";
+        if (contains(text, "pet", "cat", "dog", "宠物", "ペット")) return "Pet Supplies";
+        if (contains(text, "phone", "camera", "electronic", "digital", "watch", "数码", "スマホ")) return "Electronics";
+        if (contains(text, "kitchen", "cook", "cup", "plate", "厨房", "キッチン")) return "Kitchen";
+        if (contains(text, "fashion", "shirt", "dress", "wear", "jacket", "shoe", "bag", "服饰", "ファッション")) return "Fashion";
+        if (contains(text, "baby", "kids", "child", "母婴", "ベビー")) return "Baby";
+        if (contains(text, "outdoor", "camp", "garden", "fitness", "sport", "户外")) return "Outdoors";
+        return "Home & Living";
     }
 
     private boolean contains(String text, String... needles) {

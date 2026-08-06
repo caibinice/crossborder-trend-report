@@ -51,7 +51,7 @@ class AdminSettingsRepositoryTest {
     }
 
     @Test
-    void createDefaultIfMissing_shouldSeedReadableChineseDefaults() {
+    void createDefaultIfMissing_shouldKeepJapanDefaultsAndSeedTwentyProductsPerCategory() {
         repository.createDefaultIfMissing("default");
         AdminSettings settings = jdbcTemplate.queryForObject(
             "SELECT * FROM admin_settings WHERE tenant_id = ?",
@@ -72,13 +72,13 @@ class AdminSettingsRepositoryTest {
         );
 
         assertIterableEquals(List.of("WooCommerce公开目录", "Google Trends", "Yahoo Shopping", "Rakuten"), settings.foreignSources());
-        assertIterableEquals(List.of("1688", "Taobao", "Pinduoduo"), settings.domesticSources());
+        assertIterableEquals(List.of("1688", "淘宝", "拼多多"), settings.domesticSources());
         assertIterableEquals(List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "厨房", "服饰", "食品"), settings.categories());
-        assertIterableEquals(List.of("日本"), settings.regions());
+        assertIterableEquals(List.of("日本", "美国", "东南亚"), settings.regions());
         assertEquals("0 30 8 * * *", settings.frequencyCron());
-        assertEquals(100, settings.maxProducts());
+        assertEquals(200, settings.maxProducts());
         assertEquals(10, settings.maxCategories());
-        assertEquals(10, settings.productsPerCategory());
+        assertEquals(20, settings.productsPerCategory());
         assertEquals("sales_volume", settings.rankingMetric());
         assertEquals(3, settings.supplierSites().size());
         assertEquals(new BigDecimal("0.048000"), settings.jpyCnyRate());

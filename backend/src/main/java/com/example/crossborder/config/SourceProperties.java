@@ -9,6 +9,8 @@ public record SourceProperties(
     boolean frankfurterEnabled,
     boolean woocommerceEnabled,
     String woocommerceStoreUrls,
+    String woocommerceUsStoreUrls,
+    String woocommerceSeaStoreUrls,
     String tiktokMode,
     String apifyToken,
     String apifyTikTokActor,

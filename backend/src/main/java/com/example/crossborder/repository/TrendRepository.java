@@ -128,10 +128,24 @@ public class TrendRepository {
         ).stream().findFirst().flatMap(this::byId);
     }
 
+    public Optional<TrendReport> latest(String marketKey) {
+        return jdbc.query(
+            "SELECT id FROM trend_reports WHERE tenant_id=? AND source_key LIKE ? ORDER BY report_date DESC,created_at DESC LIMIT 1",
+            (rs, rowNum) -> rs.getLong(1), DEFAULT_TENANT, marketPattern(marketKey)
+        ).stream().findFirst().flatMap(this::byId);
+    }
+
     public Optional<TrendReport> byDate(LocalDate date) {
         return jdbc.query(
             "SELECT id FROM trend_reports WHERE tenant_id=? AND report_date=? ORDER BY created_at DESC LIMIT 1",
             (rs, rowNum) -> rs.getLong(1), DEFAULT_TENANT, java.sql.Date.valueOf(date)
+        ).stream().findFirst().flatMap(this::byId);
+    }
+
+    public Optional<TrendReport> byDate(LocalDate date, String marketKey) {
+        return jdbc.query(
+            "SELECT id FROM trend_reports WHERE tenant_id=? AND report_date=? AND source_key LIKE ? ORDER BY created_at DESC LIMIT 1",
+            (rs, rowNum) -> rs.getLong(1), DEFAULT_TENANT, java.sql.Date.valueOf(date), marketPattern(marketKey)
         ).stream().findFirst().flatMap(this::byId);
     }
 
@@ -159,6 +173,14 @@ public class TrendRepository {
         return mapReports(reports);
     }
 
+    public List<TrendReport> list(String marketKey) {
+        List<ReportRow> reports = jdbc.query(
+            "SELECT * FROM trend_reports WHERE tenant_id=? AND source_key LIKE ? ORDER BY report_date DESC,created_at DESC LIMIT 30",
+            reportMapper(), DEFAULT_TENANT, marketPattern(marketKey)
+        );
+        return mapReports(reports);
+    }
+
     public List<TrendReportSummary> listSummaries(int limit) {
         int safeLimit = Math.min(Math.max(limit, 1), 100);
         return jdbc.query("""
@@ -178,6 +200,27 @@ public class TrendRepository {
                 ts(rs.getTimestamp("created_at")),
                 rs.getInt("product_count")
             ), DEFAULT_TENANT, safeLimit);
+    }
+
+    public List<TrendReportSummary> listSummaries(int limit, String marketKey) {
+        int safeLimit = Math.min(Math.max(limit, 1), 100);
+        return jdbc.query("""
+            SELECT r.id,r.report_date,r.source_mode,r.title,r.summary,r.created_at,COUNT(p.id) AS product_count
+            FROM trend_reports r
+            LEFT JOIN trend_products p ON p.report_id=r.id
+            WHERE r.tenant_id=? AND r.source_key LIKE ?
+            GROUP BY r.id,r.report_date,r.source_mode,r.title,r.summary,r.created_at
+            ORDER BY r.report_date DESC,r.created_at DESC
+            LIMIT ?
+            """, (rs, rowNum) -> new TrendReportSummary(
+                rs.getLong("id"),
+                rs.getDate("report_date").toLocalDate(),
+                s(rs, "source_mode"),
+                s(rs, "title"),
+                s(rs, "summary"),
+                ts(rs.getTimestamp("created_at")),
+                rs.getInt("product_count")
+            ), DEFAULT_TENANT, marketPattern(marketKey), safeLimit);
     }
 
     public int countReports() {
@@ -256,6 +299,10 @@ public class TrendRepository {
         }
         args[ids.size()] = DEFAULT_TENANT;
         return args;
+    }
+
+    private String marketPattern(String marketKey) {
+        return marketKey + ":%";
     }
 
     private record ProductRow(

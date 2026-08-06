@@ -54,6 +54,14 @@ public class ExternalDataSourceService {
     }
 
     public List<DataSourceStatus> statuses() {
+        return statuses("jp");
+    }
+
+    public List<DataSourceStatus> statuses(String marketKey) {
+        return MarketCatalog.get(marketKey).english() ? internationalMarketChineseStatuses() : japaneseMarketStatuses();
+    }
+
+    private List<DataSourceStatus> japaneseMarketStatuses() {
         return List.of(
             status("google-trends", "Google Trends 实时趋势", "signal", "RSS", properties.googleTrendsEnabled(), true, true,
                 "日本、美国、东南亚实时搜索趋势信号，直接入库用于趋势雷达。",
@@ -97,6 +105,61 @@ public class ExternalDataSourceService {
             status("supplier-search", "1688 / 国内采购", "supplier", value(properties.supplierMode(), "search-link"), false, false, false,
                 "生成 1688、淘宝、拼多多采购检索入口并估算成本。",
                 "https://open.1688.com/", "当前价格为估算值并明确标注；真实报价需开放平台或供应商报价单。",
+                List.of("如需真实报价：1688 开放平台应用或供应商报价表"), List.of("SUPPLIER_MODE"))
+        );
+    }
+
+    private List<DataSourceStatus> internationalMarketChineseStatuses() {
+        return List.of(
+            status("google-trends", "Google Trends 实时趋势", "signal", "RSS", properties.googleTrendsEnabled(), true, true,
+                "日本、美国、东南亚实时搜索趋势信号，直接入库用于趋势雷达。",
+                "https://trends.google.com/trending", "无需账号或 Key；默认同步 JP、US、SG。",
+                List.of("无需材料"), List.of("GOOGLE_TRENDS_ENABLED", "GOOGLE_TRENDS_REGIONS", "OUTBOUND_HTTP_PROXY（可选）")),
+            status("frankfurter", "Frankfurter 公共汇率", "rate", "public-api", properties.frankfurterEnabled(), true, true,
+                "同步 JPY/CNY、USD/CNY、SGD/CNY 等央行参考汇率，用于多币种利润换算。",
+                "https://frankfurter.dev/", "无需账号或 Key；汇率按日期缓存到 MySQL。",
+                List.of("无需材料"), List.of("FRANKFURTER_ENABLED")),
+            status("woocommerce", "WooCommerce 公共商品目录", "catalog", "store-api", wooConfigured(), true, false,
+                "采集三个市场公开店铺的商品、价格、图片、类目、评分和热销排序。",
+                "https://developer.woocommerce.com/docs/apis/store-api/resources-endpoints/products",
+                "无需 Key；每个市场使用独立且可替换的店铺 URL 列表。",
+                List.of("公开 WooCommerce 店铺首页 URL"), List.of(
+                    "WOOCOMMERCE_ENABLED", "WOOCOMMERCE_STORE_URLS",
+                    "WOOCOMMERCE_US_STORE_URLS", "WOOCOMMERCE_SEA_STORE_URLS"
+                )),
+            status("yahoo-shopping", "Yahoo! Japan Shopping", "catalog", "official-api", has(properties.yahooShoppingClientId()), false, false,
+                "日本商品高评价趋势榜，以及含税价格、图片、评分和评论数搜索。",
+                "https://developer.yahoo.co.jp/webapi/shopping/shopping/v1/highRatingTrendRanking.html",
+                "申请 Client ID 后即可参与真实日报；公开接口不返回具体销量或销售额。",
+                List.of("Yahoo! JAPAN 开发者账号", "应用 Client ID"), List.of("YAHOO_SHOPPING_CLIENT_ID")),
+            status("rakuten", "Rakuten Ichiba", "catalog", "official-api", rakutenConfigured(), false, false,
+                "日本乐天商品、价格、图片、评论和海外配送信息。",
+                "https://webservice.rakuten.co.jp/index.php/documentation/ichiba-item-search",
+                "2026 版接口同时需要 Application ID 与 Access Key；Affiliate ID 可选。",
+                List.of("Rakuten Web Service 应用", "Application ID", "Access Key", "Affiliate ID（可选）"),
+                List.of("RAKUTEN_APPLICATION_ID", "RAKUTEN_ACCESS_KEY", "RAKUTEN_AFFILIATE_ID（可选）")),
+            status("rainforest", "Amazon / Rainforest API", "catalog", value(properties.amazonMode(), "rainforest"), has(properties.rainforestApiKey()), false, false,
+                "Amazon 商品搜索、价格、评分、排名和图片。",
+                "https://www.rainforestapi.com/docs/product-data-api/overview",
+                "适合快速获得结构化 Amazon 数据，按服务商套餐计费。",
+                List.of("Rainforest API 账号", "API Key"), List.of("RAINFOREST_API_KEY")),
+            status("keepa", "Amazon / Keepa", "history", "keepa", has(properties.keepaApiKey()), false, false,
+                "Amazon 价格历史、BSR、类目和报价历史。",
+                "https://keepa.com/#!api", "当前显示接入位，后续可用于历史曲线增强。",
+                List.of("Keepa 订阅", "API Key"), List.of("KEEPA_API_KEY")),
+            status("deepseek", "DeepSeek 中文翻译与评分", "enrichment", value(aiProperties.model(), "deepseek-v4-pro"), aiConfigured(), false, false,
+                "把日文或英文商品名翻译为中文采购词，并输出可审计的跨境潜力评分。",
+                "https://api-docs.deepseek.com/zh-cn/guides/thinking_mode", "默认使用 V4 Pro Thinking high；失败时保留原始商品名并使用中文品类兜底。",
+                List.of("DeepSeek API Key"), List.of("AI_ENRICHMENT_ENABLED", "DEEPSEEK_API_KEY", "DEEPSEEK_MODEL", "DEEPSEEK_REASONING_EFFORT")),
+            status("tiktok-apify", "TikTok / Apify", "social", value(properties.tiktokMode(), "demo"), has(properties.apifyToken()), false, false,
+                "TikTok 热门视频与商品趋势采集。",
+                "https://apify.com/clockworks/tiktok-scraper",
+                "已保留配置位，当前日报优先使用可验证商品目录。",
+                List.of("Apify 账号", "API Token"), List.of("APIFY_TOKEN")),
+            status("supplier-search", "1688 / 国内采购", "supplier", value(properties.supplierMode(), "search-link"), false, false, false,
+                "生成 1688、淘宝、拼多多中文采购检索入口并估算成本。",
+                "https://open.1688.com/",
+                "当前价格为估算值并明确标注；真实报价需开放平台或供应商报价单。",
                 List.of("如需真实报价：1688 开放平台应用或供应商报价表"), List.of("SUPPLIER_MODE"))
         );
     }
@@ -239,8 +302,16 @@ public class ExternalDataSourceService {
     }
 
     public List<String> woocommerceStores() {
+        return woocommerceStores("jp");
+    }
+
+    public List<String> woocommerceStores(String marketKey) {
         if (!properties.woocommerceEnabled()) return List.of();
-        return split(properties.woocommerceStoreUrls());
+        return switch (MarketCatalog.get(marketKey).key()) {
+            case "us" -> split(properties.woocommerceUsStoreUrls());
+            case "sea" -> split(properties.woocommerceSeaStoreUrls());
+            default -> split(properties.woocommerceStoreUrls());
+        };
     }
 
     public List<String> googleTrendRegions() {
@@ -295,7 +366,8 @@ public class ExternalDataSourceService {
     }
 
     private boolean wooConfigured() {
-        return properties.woocommerceEnabled() && !woocommerceStores().isEmpty();
+        return properties.woocommerceEnabled()
+            && MarketCatalog.keys().stream().anyMatch(key -> !woocommerceStores(key).isEmpty());
     }
 
     private String rakutenBaseUrl() {

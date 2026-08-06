@@ -90,11 +90,13 @@ public class AdminSettingsRepository {
             jdbc.update("""
                 INSERT INTO admin_settings(
                   id, tenant_id, foreign_sources, domestic_sources, categories, regions, source_mode,
-                  frequency_cron, max_products, jpy_cny_rate, auto_exchange_rate, default_shipping_cny, smart_mode
+                  frequency_cron, max_products, max_categories, products_per_category, ranking_metric,
+                  jpy_cny_rate, auto_exchange_rate, default_shipping_cny, smart_mode
                 ) VALUES(
-                  ?, ?, 'WooCommerce公开目录,Google Trends,Yahoo Shopping,Rakuten', '1688,Taobao,Pinduoduo',
+                  ?, ?, 'WooCommerce公开目录,Google Trends,Yahoo Shopping,Rakuten', '1688,淘宝,拼多多',
                   '玩具,家居,美妆,宠物,数码,户外,母婴,厨房,服饰,食品',
-                  '日本', 'external', '0 30 8 * * *', 100, 0.048, true, 18, true
+                  '日本,美国,东南亚', 'external', '0 30 8 * * *', 200, 10, 20, 'sales_volume',
+                  0.048, true, 18, true
                 )
                 """,
                 nextId == null ? 1L : nextId,

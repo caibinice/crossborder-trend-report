@@ -24,7 +24,7 @@ class RakutenTrendSourceTest {
     @Test
     void keepsAccessKeyInHeaderAndAddsOptionalAffiliateId() {
         SourceProperties properties = new SourceProperties(
-            true, "JP", true, true, "https://shop.test", "demo", "", "", "", "",
+            true, "JP", true, true, "https://shop.test", "", "", "demo", "", "", "", "",
             "rainforest", "", "", "", "app-id", "secret-key", "affiliate-id", "20260701",
             "https://openapi.rakuten.co.jp", "", "search-link", ""
         );

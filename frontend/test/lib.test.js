@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { api } from '../src/lib.js';
+import { api, regionOf } from '../src/lib.js';
 
 const originalFetch = globalThis.fetch;
 
@@ -37,4 +37,13 @@ test('preserves an explicitly supplied content type', async () => {
   await api('/plain', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: 'value' });
 
   assert.equal(requestHeaders.get('Content-Type'), 'text/plain');
+});
+
+test('localizes market names without changing the Japan default', () => {
+  const japan = { sourcePlatform: 'Rakuten Ichiba', sourceUrl: 'https://example.com/item' };
+  const unitedStates = { sourcePlatform: 'WooCommerce US / shop.test', sourceUrl: 'https://shop.test/item' };
+
+  assert.equal(regionOf(japan), '日本');
+  assert.equal(regionOf(japan, true), 'Japan');
+  assert.equal(regionOf(unitedStates, true), 'United States');
 });

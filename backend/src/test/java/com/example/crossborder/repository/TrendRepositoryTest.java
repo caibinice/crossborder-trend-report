@@ -112,6 +112,18 @@ class TrendRepositoryTest {
         assertEquals(3, preparedStatements.get(), "日报、商品和货源链接应分别仅查询一次");
     }
 
+    @Test
+    void marketQueriesKeepReportsIsolated() {
+        jdbc.update("INSERT INTO trend_reports VALUES(3,'default',DATE '2026-07-16','WooCommerce US','us:external','US report','US summary',TIMESTAMP '2026-07-16 08:00:00')");
+        insertProduct(301, 3, 1, "US Product");
+
+        assertEquals(1, repository.list("us").size());
+        assertEquals(3L, repository.latest("us").orElseThrow().id());
+        assertEquals(1, repository.listSummaries(30, "us").size());
+        assertEquals("US report", repository.listSummaries(30, "us").get(0).title());
+        assertEquals(2, repository.list("jp").size());
+    }
+
     private void insertProduct(long id, long reportId, int rank, String name) {
         jdbc.update("""
             INSERT INTO trend_products(

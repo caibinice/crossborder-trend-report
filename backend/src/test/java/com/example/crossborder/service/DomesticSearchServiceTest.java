@@ -39,6 +39,24 @@ class DomesticSearchServiceTest {
     }
 
     @Test
+    void usesChineseTranslationAndNotesForUnitedStatesSourcingLinks() {
+        TrendCandidate candidate = new TrendCandidate(
+            "玩具", "Kids toy storage", "儿童玩具收纳盒", "儿童 玩具 收纳盒", "WooCommerce US",
+            "https://example.com", null, 80, 10, 20, 70, new BigDecimal("20"), "USD", "评论证据"
+        );
+
+        List<DomesticLink> links = new DomesticSearchService().search(
+            candidate, new BigDecimal("140"),
+            List.of(new SupplierSiteConfig("淘宝", "https://s.taobao.com/search?q={keyword}")),
+            "us"
+        );
+
+        assertEquals("淘宝", links.get(0).platform());
+        assertTrue(links.get(0).title().contains("儿童 玩具 收纳盒"));
+        assertTrue(links.get(0).note().startsWith("使用 UTF-8 中文采购词"));
+    }
+
+    @Test
     void normalizesUtf8LinksFromHistoricalReportsFor1688() {
         String query = "儿童手表,智能手表,儿童相机,游戏";
         DomesticLink historical = new DomesticLink(

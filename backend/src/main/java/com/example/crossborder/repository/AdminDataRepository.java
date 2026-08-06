@@ -149,10 +149,18 @@ public class AdminDataRepository {
         jdbc.update("INSERT INTO sys_config(tenant_id,config_name,config_key,config_value,system_builtin,remark) VALUES('default','系统名称','sys.name','跨境选品系统',true,'')");
         jdbc.update("INSERT INTO sys_config(tenant_id,config_name,config_key,config_value,system_builtin,remark) VALUES('default','默认语言','sys.lang','zh-CN',true,'')");
         jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','jp','日本市场','日本',true,'已接入演示趋势数据，可继续接 TikTok/Amazon JP')");
-        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','us','美国市场','美国',false,'待接入 Amazon US / TikTok US 数据源')");
-        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','sea','东南亚市场','东南亚',false,'待接入 TikTok Shop SEA / Shopee / Lazada')");
+        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','us','美国市场','美国',true,'已接入 Google Trends 与美国公开商品目录')");
+        jdbc.update("INSERT INTO market_configs(tenant_id,market_key,market_name,region,enabled,note) VALUES('default','sea','东南亚市场','东南亚',true,'当前以新加坡趋势与公开商品目录代表东南亚市场')");
         for (String category : List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "汽车", "厨房", "文具", "服饰", "健康")) {
             jdbc.update("INSERT INTO category_configs(tenant_id,category_name,market_key,enabled,keywords,note) VALUES('default',?,'jp',true,?,'日本市场默认品类')", category, category);
+        }
+        for (String market : List.of("us", "sea")) {
+            for (String category : List.of("玩具", "家居", "美妆", "宠物", "数码", "户外", "母婴", "厨房", "服饰", "食品")) {
+                jdbc.update(
+                    "INSERT INTO category_configs(tenant_id,category_name,market_key,enabled,keywords,note) VALUES('default',?,?,true,?,'默认市场品类')",
+                    category, market, category
+                );
+            }
         }
         settingsRepository.createDefaultIfMissing(DEFAULT_TENANT);
     }
@@ -552,7 +560,12 @@ public class AdminDataRepository {
         } else {
             jdbc.update("INSERT INTO category_configs(tenant_id,category_name,market_key,enabled,keywords,note) VALUES(?,?,?,?,?,?)", def(category.tenantId()), category.categoryName(), category.marketKey(), category.enabled(), category.keywords(), category.note());
         }
-        return categories("*").stream().filter(item -> item.categoryName().equals(category.categoryName()) && item.tenantId().equals(def(category.tenantId()))).findFirst().orElseThrow();
+        return categories("*").stream()
+            .filter(item -> item.categoryName().equals(category.categoryName())
+                && item.marketKey().equals(category.marketKey())
+                && item.tenantId().equals(def(category.tenantId())))
+            .findFirst()
+            .orElseThrow();
     }
 
     public void deleteCategory(long id) {

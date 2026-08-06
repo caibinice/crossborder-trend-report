@@ -31,15 +31,25 @@ public class SmartCandidateEnrichmentService {
     }
 
     public List<TrendCandidate> enrich(List<TrendCandidate> candidates, AdminSettings settings) {
+        return enrich(candidates, settings, "jp");
+    }
+
+    public List<TrendCandidate> enrich(
+        List<TrendCandidate> candidates, AdminSettings settings, String marketKey
+    ) {
         if (candidates.isEmpty()) return candidates;
-        List<TrendCandidate> output = new ArrayList<>(candidates);
+        MarketCatalog.Market market = MarketCatalog.get(marketKey);
+        List<String> categories = MarketCatalog.categories(settings.categories(), market.key());
+        List<TrendCandidate> output = new ArrayList<>(candidates.stream().map(this::ensureChineseCategory).toList());
         if (settings.smartMode() && external.aiConfigured()) {
             int batchSize = 25;
             for (int offset = 0; offset < output.size(); offset += batchSize) {
-                enrichSafely(output, offset, Math.min(offset + batchSize, output.size()), settings.categories());
+                enrichSafely(output, offset, Math.min(offset + batchSize, output.size()), categories);
             }
         }
-        return output.stream().map(this::ensureChineseFallback).toList();
+        return output.stream()
+            .map(this::ensureChineseFallback)
+            .toList();
     }
 
     public SourceTestResult test() {
@@ -70,7 +80,9 @@ public class SmartCandidateEnrichmentService {
         }
     }
 
-    private void enrichBatch(List<TrendCandidate> output, int start, int end, List<String> categories) {
+    private void enrichBatch(
+        List<TrendCandidate> output, int start, int end, List<String> categories
+    ) {
         try {
             List<Map<String, Object>> sourceItems = new ArrayList<>();
             for (int index = start; index < end; index++) {
@@ -89,10 +101,11 @@ public class SmartCandidateEnrichmentService {
             String categoryText = String.join("、", categories == null ? List.of() : categories);
             String system = "你是跨境电商商品翻译与选品评估器。只根据输入标题、来源、价格和证据评估，不编造真实销量或销售额。"
                 + "返回严格 JSON 对象 {\"items\":[{\"index\":0,\"nameCn\":\"\",\"category\":\"\",\"keywords\":\"\",\"reason\":\"\",\"aiScore\":50}]}。"
-                + "nameCn 必须是简洁的简体中文商品名，不得包含日文假名；category 必须从这些品类选择：" + categoryText
+                + "无论来源商品名是日语还是英语，nameCn 都必须翻译为简洁的简体中文商品名，不得包含日文假名；"
+                + "category 必须从这些中文品类选择：" + categoryText
                 + "；keywords 必须是 2-4 个简体中文采购搜索词，不得出现日文假名；"
                 + "aiScore 为 1-100 的跨境销售潜力评分，综合需求普适性、差异化、物流友好度和证据质量；"
-                + "reason 不超过 80 字，明确说明评分依据并保留输入中的排名、评论或评分事实。";
+                + "reason 使用简体中文且不超过 80 字，明确说明评分依据并保留输入中的排名、评论或评分事实。";
             String user = json.writeValueAsString(Map.of("items", sourceItems));
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("model", value(properties.model(), "deepseek-v4-pro"));
@@ -125,13 +138,19 @@ public class SmartCandidateEnrichmentService {
                 // The source adapter already queried a configured category. AI may improve names and
                 // procurement terms, but reclassification would break the configured per-category quota.
                 String category = original.category();
-                String nameCn = chineseText(enriched.path("nameCn").asText(""), original.productNameCn(), category + "热销商品");
-                String keywords = chineseText(enriched.path("keywords").asText(""), nameCn, category);
+                String displayName = chineseText(
+                    enriched.path("nameCn").asText(""), original.productNameCn(), category + "热销商品"
+                );
+                String keywords = chineseText(enriched.path("keywords").asText(""), displayName, category);
+                String reason = chineseText(
+                    enriched.path("reason").asText(""), original.reason(),
+                    "公开目录热销候选，综合来源排序、评价与物流条件评估。"
+                );
                 output.set(index, new TrendCandidate(
-                    category, original.productNameJp(), nameCn, keywords,
+                    category, original.productNameJp(), displayName, keywords,
                     original.sourcePlatform(), original.sourceUrl(), original.imageUrl(), original.heatScore(),
                     original.salesVolumeScore(), original.salesAmountScore(), score(enriched.path("aiScore"), original.aiScore()),
-                    original.sourcePrice(), original.sourceCurrency(), text(enriched, "reason", original.reason())
+                    original.sourcePrice(), original.sourceCurrency(), reason
                 ));
             }
         } catch (Exception exception) {
@@ -139,7 +158,9 @@ public class SmartCandidateEnrichmentService {
         }
     }
 
-    private void enrichSafely(List<TrendCandidate> output, int start, int end, List<String> categories) {
+    private void enrichSafely(
+        List<TrendCandidate> output, int start, int end, List<String> categories
+    ) {
         try {
             enrichBatch(output, start, end, categories);
         } catch (RuntimeException exception) {
@@ -157,10 +178,26 @@ public class SmartCandidateEnrichmentService {
         String category = original.category() == null || original.category().isBlank() ? "跨境" : original.category().trim();
         String nameCn = chineseText(original.productNameCn(), "", category + "热销商品");
         String keywords = chineseText(original.keywords(), nameCn, category + " 热销商品");
-        if (nameCn.equals(original.productNameCn()) && keywords.equals(original.keywords())) return original;
+        String reason = chineseText(
+            original.reason(), "", "公开目录热销候选，综合来源排序、评价与物流条件评估。"
+        );
+        if (nameCn.equals(original.productNameCn())
+            && keywords.equals(original.keywords())
+            && reason.equals(original.reason())) return original;
         return new TrendCandidate(
             original.category(), original.productNameJp(), nameCn, keywords, original.sourcePlatform(), original.sourceUrl(),
             original.imageUrl(), original.heatScore(), original.salesVolumeScore(), original.salesAmountScore(), original.aiScore(),
+            original.sourcePrice(), original.sourceCurrency(), reason
+        );
+    }
+
+    private TrendCandidate ensureChineseCategory(TrendCandidate original) {
+        String category = MarketCatalog.chineseCategory(original.category());
+        if (category.equals(original.category())) return original;
+        return new TrendCandidate(
+            category, original.productNameJp(), original.productNameCn(), original.keywords(),
+            original.sourcePlatform(), original.sourceUrl(), original.imageUrl(), original.heatScore(),
+            original.salesVolumeScore(), original.salesAmountScore(), original.aiScore(),
             original.sourcePrice(), original.sourceCurrency(), original.reason()
         );
     }
@@ -171,11 +208,6 @@ public class SmartCandidateEnrichmentService {
             text = text.replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "");
         }
         return text;
-    }
-
-    private String text(JsonNode node, String key, String fallback) {
-        String value = node.path(key).asText("").trim();
-        return value.isBlank() ? fallback : value;
     }
 
     private String chineseText(String candidate, String fallback, String finalFallback) {

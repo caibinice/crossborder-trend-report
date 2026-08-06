@@ -41,23 +41,44 @@ public class ExternalTrendDataSource implements TrendDataSource {
 
     @Override
     public List<TrendCandidate> fetch(LocalDate date, AdminSettings settings) {
+        return fetch(date, settings, "jp");
+    }
+
+    public List<TrendCandidate> fetch(LocalDate date, AdminSettings settings, String marketKey) {
+        String market = MarketCatalog.get(marketKey).key();
         List<TrendCandidate> candidates = new ArrayList<>();
-        if (enabled(settings, "woocommerce", "公开目录")) addSafely(candidates, "WooCommerce", () -> woocommerce.fetch(settings));
-        if (enabled(settings, "yahoo")) addSafely(candidates, "Yahoo Shopping", () -> yahoo.fetch(settings));
-        if (enabled(settings, "rakuten", "乐天")) addSafely(candidates, "Rakuten", () -> rakuten.fetch(settings));
-        if (enabled(settings, "rainforest", "amazon")) addSafely(candidates, "Rainforest", () -> rainforest.fetch(settings));
+        if (enabled(settings, "woocommerce", "public catalog", "公开目录")) {
+            addSafely(candidates, "WooCommerce " + market.toUpperCase(Locale.ROOT), () -> woocommerce.fetch(settings, market));
+        }
+        if ("jp".equals(market)) {
+            if (enabled(settings, "yahoo")) addSafely(candidates, "Yahoo Shopping", () -> yahoo.fetch(settings));
+            if (enabled(settings, "rakuten", "乐天")) addSafely(candidates, "Rakuten", () -> rakuten.fetch(settings));
+            if (enabled(settings, "rainforest", "amazon")) addSafely(candidates, "Rainforest", () -> rainforest.fetch(settings));
+        }
         List<TrendCandidate> unique = deduplicate(candidates);
-        return ranking.rank(enrichment.enrich(unique, settings));
+        return ranking.rank(enrichment.enrich(unique, settings, market));
     }
 
     public List<TrendCandidate> preview(String sourceKey, AdminSettings settings) {
+        return preview(sourceKey, settings, "jp");
+    }
+
+    public List<TrendCandidate> preview(String sourceKey, AdminSettings settings, String marketKey) {
+        String market = MarketCatalog.get(marketKey).key();
         return switch (sourceKey) {
-            case "woocommerce" -> woocommerce.fetch(settings);
-            case "yahoo-shopping" -> yahoo.preview(settings);
-            case "rakuten" -> rakuten.preview(settings);
-            case "rainforest" -> rainforest.fetch(settings);
+            case "woocommerce" -> woocommerce.fetch(settings, market);
+            case "yahoo-shopping" -> japanOnly(market, () -> yahoo.preview(settings));
+            case "rakuten" -> japanOnly(market, () -> rakuten.preview(settings));
+            case "rainforest" -> japanOnly(market, () -> rainforest.fetch(settings));
             default -> throw new ApiValidationException("该数据源不支持商品连接测试");
         };
+    }
+
+    private List<TrendCandidate> japanOnly(String market, Supplier<List<TrendCandidate>> fetcher) {
+        if (!"jp".equals(market)) {
+            throw new ApiValidationException("该数据源仅适用于日本市场");
+        }
+        return fetcher.get();
     }
 
     private void addSafely(List<TrendCandidate> target, String source, Supplier<List<TrendCandidate>> fetcher) {

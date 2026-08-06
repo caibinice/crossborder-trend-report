@@ -62,7 +62,7 @@ public class TrendReportService {
     }
 
     public TrendReport collect(LocalDate date) {
-        return collect(date, false);
+        return collect(date, "jp", false);
     }
 
     /**
@@ -70,9 +70,17 @@ public class TrendReportService {
      * and a row lock in the database transaction for concurrent application instances.
      */
     public TrendReport collect(LocalDate date, boolean force) {
+        return collect(date, "jp", force);
+    }
+
+    public TrendReport collect(LocalDate date, String marketKey, boolean force) {
+        MarketCatalog.Market market = MarketCatalog.get(marketKey);
         AdminSettings settings = settingsService.get();
         String sourceMode = canonicalSourceMode(settings.sourceMode());
-        String sourceKey = "jp:" + sourceMode;
+        if (!"jp".equals(market.key()) && !"external".equals(sourceMode)) {
+            sourceMode = "external";
+        }
+        String sourceKey = market.key() + ":" + sourceMode;
         String lockKey = date + ":" + sourceKey;
         ReentrantLock localLock = localLocks.computeIfAbsent(lockKey, ignored -> new ReentrantLock());
         localLock.lock();
@@ -81,8 +89,8 @@ public class TrendReportService {
                 Optional<TrendReport> existing = repository.byDateAndSourceKey(date, sourceKey);
                 if (existing.isPresent()) return existing.get();
             }
-            ReportDraft draft = prepareDraft(date, settings, sourceMode);
-            TrendReport report = transactions.execute(status -> persist(date, sourceKey, draft, force));
+            ReportDraft draft = prepareDraft(date, settings, sourceMode, market);
+            TrendReport report = transactions.execute(status -> persist(date, sourceKey, market, draft, force));
             return Objects.requireNonNull(report, "日报保存失败");
         } finally {
             localLock.unlock();
@@ -90,14 +98,20 @@ public class TrendReportService {
         }
     }
 
-    private TrendReport persist(LocalDate date, String sourceKey, ReportDraft draft, boolean force) {
+    private TrendReport persist(
+        LocalDate date, String sourceKey, MarketCatalog.Market market, ReportDraft draft, boolean force
+    ) {
         repository.lockForCollection(date, sourceKey);
         if (!force) {
             Optional<TrendReport> existing = repository.byDateAndSourceKey(date, sourceKey);
             if (existing.isPresent()) return existing.get();
         }
         if (force) repository.deleteByDateAndSourceKey(date, sourceKey);
-        long reportId = repository.createReport(date, sourceKey, draft.sourceMode(), "日本市场跨境热品日报 " + date, draft.summary());
+        long reportId = repository.createReport(
+            date, sourceKey, draft.sourceMode(),
+            market.name() + "跨境热品日报 " + date,
+            draft.summary()
+        );
         int rank = 1;
         for (ProductDraft product : draft.products()) {
             repository.addProduct(new TrendProduct(
@@ -111,14 +125,18 @@ public class TrendReportService {
         return repository.byId(reportId).orElseThrow(() -> new IllegalStateException("日报保存后无法读取"));
     }
 
-    private ReportDraft prepareDraft(LocalDate date, AdminSettings settings, String sourceMode) {
-        List<TrendCandidate> external = sourceMode.equals("demo") ? List.of() : externalSource.fetch(date, settings);
+    private ReportDraft prepareDraft(
+        LocalDate date, AdminSettings settings, String sourceMode, MarketCatalog.Market market
+    ) {
+        List<TrendCandidate> external = sourceMode.equals("demo")
+            ? List.of()
+            : externalSource.fetch(date, settings, market.key());
         List<TrendCandidate> rawCandidates = switch (sourceMode) {
-            case "external" -> requireExternal(external);
+            case "external" -> requireExternal(external, market);
             case "mixed" -> merge(demoSource.fetch(date), external);
             default -> demoSource.fetch(date);
         };
-        List<TrendCandidate> candidates = selectCandidates(rawCandidates, settings);
+        List<TrendCandidate> candidates = selectCandidates(rawCandidates, settings, market.key());
         if (candidates.isEmpty()) {
             throw new ApiConflictException("数据源返回了商品，但全部被后台品类配置过滤；请调整品类后重试");
         }
@@ -126,12 +144,12 @@ public class TrendReportService {
         Map<String, BigDecimal> currencyRates = new HashMap<>();
         List<ProductDraft> products = new ArrayList<>();
         for (TrendCandidate candidate : candidates) {
-            String currency = normalizedCurrency(candidate.sourceCurrency());
+            String currency = normalizedCurrency(candidate.sourceCurrency(), market.currency());
             BigDecimal rate = currencyRates.computeIfAbsent(currency,
                 key -> exchangeRates.resolveToCny(key, settings.jpyCnyRate(), settings.autoExchangeRate()));
             BigDecimal sourcePrice = nonNull(candidate.sourcePrice());
             BigDecimal sourceCny = sourcePrice.multiply(rate).setScale(2, RoundingMode.HALF_UP);
-            List<DomesticLink> links = domestic.search(candidate, sourceCny, settings.supplierSites());
+            List<DomesticLink> links = domestic.search(candidate, sourceCny, settings.supplierSites(), market.key());
             BigDecimal cost = links.stream().map(DomesticLink::priceCny).min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
             BigDecimal platformFee = sourceCny.multiply(value(properties.platformFeeRate()));
             BigDecimal paymentFee = sourceCny.multiply(value(properties.paymentFeeRate()));
@@ -156,8 +174,10 @@ public class TrendReportService {
         return new ReportDraft(displayMode, summary, products);
     }
 
-    private List<TrendCandidate> selectCandidates(List<TrendCandidate> rawCandidates, AdminSettings settings) {
-        List<String> configured = settings.categories() == null ? List.of() : settings.categories().stream()
+    private List<TrendCandidate> selectCandidates(
+        List<TrendCandidate> rawCandidates, AdminSettings settings, String marketKey
+    ) {
+        List<String> configured = MarketCatalog.categories(settings.categories(), marketKey).stream()
             .limit(Math.max(1, settings.maxCategories())).toList();
         int perCategory = Math.max(1, settings.productsPerCategory());
         int totalLimit = Math.min(Math.max(1, settings.maxProducts()), Math.max(1, configured.size()) * perCategory);
@@ -203,7 +223,7 @@ public class TrendReportService {
             .thenComparing(TrendCandidate::productNameJp);
     }
 
-    private List<TrendCandidate> requireExternal(List<TrendCandidate> external) {
+    private List<TrendCandidate> requireExternal(List<TrendCandidate> external, MarketCatalog.Market market) {
         if (external.isEmpty()) {
             throw new ApiConflictException("真实商品源未配置或均采集失败。请到后台数据源配置测试连接；系统不会在 external 模式下静默回退 Demo。");
         }
@@ -232,9 +252,10 @@ public class TrendReportService {
         };
     }
 
-    private String normalizedCurrency(String value) {
-        String currency = value == null || value.isBlank() ? "JPY" : value.trim().toUpperCase(Locale.ROOT);
-        return currency.matches("[A-Z]{3}") ? currency : "JPY";
+    private String normalizedCurrency(String value, String fallback) {
+        String defaultCurrency = fallback == null || !fallback.matches("[A-Z]{3}") ? "JPY" : fallback;
+        String currency = value == null || value.isBlank() ? defaultCurrency : value.trim().toUpperCase(Locale.ROOT);
+        return currency.matches("[A-Z]{3}") ? currency : defaultCurrency;
     }
 
     private BigDecimal nonNull(BigDecimal value) {
@@ -246,10 +267,18 @@ public class TrendReportService {
     }
 
     public Optional<TrendReport> latest() { return repository.latest(); }
+    public Optional<TrendReport> latest(String marketKey) { return repository.latest(MarketCatalog.get(marketKey).key()); }
     public Optional<TrendReport> byDate(LocalDate date) { return repository.byDate(date); }
+    public Optional<TrendReport> byDate(LocalDate date, String marketKey) {
+        return repository.byDate(date, MarketCatalog.get(marketKey).key());
+    }
     public Optional<TrendReport> byId(long id) { return repository.byId(id); }
     public List<TrendReport> list() { return repository.list(); }
+    public List<TrendReport> list(String marketKey) { return repository.list(MarketCatalog.get(marketKey).key()); }
     public List<TrendReportSummary> listSummaries(int limit) { return repository.listSummaries(limit); }
+    public List<TrendReportSummary> listSummaries(int limit, String marketKey) {
+        return repository.listSummaries(limit, MarketCatalog.get(marketKey).key());
+    }
     public int countReports() { return repository.countReports(); }
     public int countProducts() { return repository.countProducts(); }
 
