@@ -19,7 +19,12 @@ JWT 密钥、统一操作口令、DeepSeek token、Rakuten 凭据和 Yahoo Clien
 `credentials.txt`；文件可使用无前缀项目段，也可直接使用通用文件中的
 `crossborder.*` 段。项目文件缺失时才兼容读取兄弟目录博客凭据，但博客
 不是部署前置条件。脚本会将 Rakuten、Yahoo 等配置写入服务器
-`shared/app.env`，并且只重启跨境服务，不改动其他项目或 Nginx。
+`shared/app.env`，并且只重启跨境服务，不改动其他项目或 Nginx。每次发布
+都会先备份数据库、环境文件和 systemd 单元；健康检查失败时自动恢复旧
+release、静态目录、环境与服务配置。发布结束还会校验 AI Blog release、
+Nginx 配置及量化/智能座舱进程均未变化，并回归所有公开入口。已有部署会
+保留服务器中的 JWT 与操作口令；首次部署则需在项目凭据中配置
+`[platform.action] password`。
 启用 Yahoo 数据源时，还必须通过发布器或服务器环境文件写入
 `YAHOO_SHOPPING_CLIENT_ID`；仓库只保留空值/占位值。
 阿里云中国大陆出口默认使用 Rakuten 官方 CNAME 网关，绕过被污染的域名

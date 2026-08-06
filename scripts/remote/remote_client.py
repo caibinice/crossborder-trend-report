@@ -40,8 +40,27 @@ def read_credentials() -> configparser.ConfigParser:
             "Missing project credentials.txt. Copy the private credentials file "
             "to this repository root before standalone deployment."
         )
+    # Windows editors commonly save this private INI with a UTF-8 BOM. Older
+    # personal credential files also store a provider token as the only line in
+    # its section, so normalize that compact form before parsing the INI.
+    section = ""
+    normalized: list[str] = []
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            section = stripped[1:-1].strip().lower()
+        if (
+            stripped
+            and not stripped.startswith(("#", ";", "["))
+            and "=" not in line
+        ):
+            unscoped = section.removeprefix(f"{NAMESPACE}.")
+            key = "api-key" if unscoped == "deepseek.api" else "token"
+            normalized.append(f"{key}={stripped}")
+        else:
+            normalized.append(line)
     parser = configparser.ConfigParser(interpolation=None)
-    parser.read(path, encoding="utf-8")
+    parser.read_string("\n".join(normalized), source=str(path))
     return _scoped_credentials(parser)
 
 
