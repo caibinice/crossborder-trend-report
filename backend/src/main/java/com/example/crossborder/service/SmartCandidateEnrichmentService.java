@@ -58,7 +58,7 @@ public class SmartCandidateEnrichmentService {
         }
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
-            payload.put("model", value(properties.model(), "deepseek-v4-pro"));
+            payload.put("model", value(properties.model(), "deepseek-v4-flash"));
             payload.put("stream", false);
             payload.put("max_tokens", 256);
             applyReasoning(payload);
@@ -72,7 +72,7 @@ public class SmartCandidateEnrichmentService {
             String content = json.readTree(response).path("choices").path(0).path("message").path("content").asText("").trim();
             if (content.isBlank()) throw new DataSourceAccessException("DeepSeek 返回了空内容");
             return new SourceTestResult(
-                "deepseek", true, 1, "连接成功，模型=" + value(properties.model(), "deepseek-v4-pro")
+                "deepseek", true, 1, "连接成功，模型=" + value(properties.model(), "deepseek-v4-flash")
                     + "，Thinking=" + properties.thinkingEnabled() + "，effort=" + reasoningEffort(), Instant.now()
             );
         } catch (Exception exception) {
@@ -108,7 +108,7 @@ public class SmartCandidateEnrichmentService {
                 + "reason 使用简体中文且不超过 80 字，明确说明评分依据并保留输入中的排名、评论或评分事实。";
             String user = json.writeValueAsString(Map.of("items", sourceItems));
             Map<String, Object> payload = new LinkedHashMap<>();
-            payload.put("model", value(properties.model(), "deepseek-v4-pro"));
+            payload.put("model", value(properties.model(), "deepseek-v4-flash"));
             payload.put("stream", false);
             payload.put("max_tokens", 12000);
             payload.put("response_format", Map.of("type", "json_object"));

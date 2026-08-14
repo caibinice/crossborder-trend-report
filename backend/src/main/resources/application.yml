@@ -2,7 +2,7 @@ spring:
   application:
     name: crossborder-trend-report
   datasource:
-    url: ${MYSQL_URL:jdbc:mysql://${MYSQL_HOST:101.132.78.217}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:crossborder_trend_demo}?useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    url: ${MYSQL_URL:jdbc:mysql://${MYSQL_HOST:caibinice.com}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:crossborder_trend_demo}?useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
     username: ${MYSQL_USER:cross_demo}
     password: ${MYSQL_PASSWORD:}
     hikari:
@@ -78,7 +78,7 @@ app:
     enabled: ${AI_ENRICHMENT_ENABLED:true}
     base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
     api-key: ${DEEPSEEK_API_KEY:}
-    model: ${DEEPSEEK_MODEL:deepseek-v4-pro}
+    model: ${DEEPSEEK_MODEL:deepseek-v4-flash}
     thinking-enabled: ${DEEPSEEK_THINKING_ENABLED:true}
-    reasoning-effort: ${DEEPSEEK_REASONING_EFFORT:high}
+    reasoning-effort: ${DEEPSEEK_REASONING_EFFORT:max}
     timeout-seconds: ${DEEPSEEK_TIMEOUT_SECONDS:90}

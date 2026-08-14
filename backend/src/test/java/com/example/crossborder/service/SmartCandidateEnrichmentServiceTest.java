@@ -35,7 +35,7 @@ class SmartCandidateEnrichmentServiceTest {
         String response = json.writeValueAsString(Map.of("choices", List.of(Map.of("message", Map.of("content", content)))));
         when(external.postJson(anyString(), body.capture(), anyMap(), any(Duration.class))).thenReturn(response);
         SmartCandidateEnrichmentService service = new SmartCandidateEnrichmentService(
-            new AiProperties(true, "https://api.deepseek.com", "secret", "deepseek-v4-pro", true, "high", 90),
+            new AiProperties(true, "https://api.deepseek.com", "secret", "deepseek-v4-flash", true, "max", 90),
             external, json
         );
         AdminSettings settings = new AdminSettings(
@@ -50,9 +50,9 @@ class SmartCandidateEnrichmentServiceTest {
         TrendCandidate result = service.enrich(List.of(source), settings).get(0);
         JsonNode request = json.readTree(body.getValue());
 
-        assertEquals("deepseek-v4-pro", request.path("model").asText());
+        assertEquals("deepseek-v4-flash", request.path("model").asText());
         assertEquals("enabled", request.path("thinking").path("type").asText());
-        assertEquals("high", request.path("reasoning_effort").asText());
+        assertEquals("max", request.path("reasoning_effort").asText());
         assertFalse(request.has("temperature"));
         assertEquals("玩具", result.category());
         assertEquals("儿童 玩具 收纳盒", result.keywords());
@@ -72,7 +72,7 @@ class SmartCandidateEnrichmentServiceTest {
         String response = json.writeValueAsString(Map.of("choices", List.of(Map.of("message", Map.of("content", content)))));
         when(external.postJson(anyString(), body.capture(), anyMap(), any(Duration.class))).thenReturn(response);
         SmartCandidateEnrichmentService service = new SmartCandidateEnrichmentService(
-            new AiProperties(true, "https://api.deepseek.com", "secret", "deepseek-v4-pro", true, "high", 90),
+            new AiProperties(true, "https://api.deepseek.com", "secret", "deepseek-v4-flash", true, "max", 90),
             external, json
         );
         AdminSettings settings = new AdminSettings(

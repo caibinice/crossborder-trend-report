@@ -58,7 +58,7 @@ Nginx 路由；项目级发布只更新自己的 release、静态目录和 syste
 
 ```ini
 [mysql.remote]
-host=101.132.78.217
+host=caibinice.com
 port=3306
 database=crossborder_trend_demo
 user=cross_demo
@@ -86,8 +86,8 @@ client_id=your_client_id
 
 共享文件使用 `[crossborder.mysql.remote]`、
 `[crossborder.deepseek.api]`、`[crossborder.rakuten.api]` 等名称；本地文件
-仍使用上面的无前缀名称。DeepSeek 默认调用 `deepseek-v4-pro`，启用
-Thinking 并使用 `reasoning_effort=high`；真实 Token 只放
+仍使用上面的无前缀名称。DeepSeek 默认调用 `deepseek-v4-flash`，启用
+Thinking 并使用 `reasoning_effort=max`；真实 Token 只放
 `credentials.txt`。后台 **选品配置 → 参数配置** 可以修改品类数、每类
 商品数、销量/销售额筛选口径，以及 `名称|含 {keyword} 的 URL` 格式的
 1688、淘宝、拼多多等采购站点。

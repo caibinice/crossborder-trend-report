@@ -25,7 +25,7 @@ class YahooShoppingTrendSourceTest {
     void buildsCurrentOfficialRankingAndItemSearchUrls() {
         ExternalDataSourceService external = new ExternalDataSourceService(
             sourceProperties("client-id"),
-            new AiProperties(false, "", "", "", true, "high", 90)
+            new AiProperties(false, "", "", "", true, "max", 90)
         );
 
         String ranking = external.yahooShoppingHighRatingRankingUrl("収納 ボックス", 120).orElseThrow();

@@ -29,7 +29,7 @@ class RakutenTrendSourceTest {
             "https://openapi.rakuten.co.jp", "", "search-link", ""
         );
         ExternalDataSourceService external = new ExternalDataSourceService(
-            properties, new AiProperties(false, "", "", "", true, "high", 90)
+            properties, new AiProperties(false, "", "", "", true, "max", 90)
         );
 
         String url = external.rakutenSearchUrl("収納 ボックス", 8).orElseThrow();

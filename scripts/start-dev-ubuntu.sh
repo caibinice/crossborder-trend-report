@@ -174,7 +174,7 @@ if [[ "${DB_TARGET}" == "local" ]]; then
   set_default MYSQL_USER root
   set_default MYSQL_PASSWORD ""
 else
-  set_default MYSQL_HOST 101.132.78.217
+  set_default MYSQL_HOST caibinice.com
   set_default MYSQL_PORT 3306
   set_default MYSQL_DATABASE crossborder_trend_demo
   set_default MYSQL_USER cross_demo

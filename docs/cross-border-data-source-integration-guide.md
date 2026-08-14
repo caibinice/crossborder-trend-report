@@ -280,7 +280,7 @@ TLS 校验。
 
 ## 9. AI 标准化（可选）
 
-配置 DeepSeek 后，系统默认使用 `deepseek-v4-pro`、Thinking 模式和 `reasoning_effort=high`，批量完成：
+配置 DeepSeek 后，系统默认使用 `deepseek-v4-flash`、Thinking 模式和 `reasoning_effort=max`，批量完成：
 
 - 外文标题转为中文选品名；
 - 提取 2–4 个只含中文、不含日文假名的采购关键词；
@@ -292,9 +292,9 @@ TLS 校验。
 可选环境参数：
 
 ```env
-DEEPSEEK_MODEL=deepseek-v4-pro
+DEEPSEEK_MODEL=deepseek-v4-flash
 DEEPSEEK_THINKING_ENABLED=true
-DEEPSEEK_REASONING_EFFORT=high
+DEEPSEEK_REASONING_EFFORT=max
 DEEPSEEK_TIMEOUT_SECONDS=90
 ```
 

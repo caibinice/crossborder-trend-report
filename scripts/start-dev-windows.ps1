@@ -246,7 +246,7 @@ if ($dbTarget -eq 'local') {
   Set-DefaultEnv -Name 'MYSQL_USER' -Value 'root'
   Set-DefaultEnv -Name 'MYSQL_PASSWORD' -Value ''
 } else {
-  Set-DefaultEnv -Name 'MYSQL_HOST' -Value '101.132.78.217'
+  Set-DefaultEnv -Name 'MYSQL_HOST' -Value 'caibinice.com'
   Set-DefaultEnv -Name 'MYSQL_PORT' -Value '3306'
   Set-DefaultEnv -Name 'MYSQL_DATABASE' -Value 'crossborder_trend_demo'
   Set-DefaultEnv -Name 'MYSQL_USER' -Value 'cross_demo'
